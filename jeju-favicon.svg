@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 제주 : 돌하르방 (표준 아이콘 규격 — 흰 바탕, 보라→파랑 그라데이션, 소프트 섀도) -->
+  <defs>
+    <linearGradient id="g" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5B8DEF"/>
+      <stop offset="55%" stop-color="#8F7BF3"/>
+      <stop offset="100%" stop-color="#C9A8F7"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#7B8CF0" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#EEEEF2" stroke-width="3"/>
+  <g filter="url(#soft)">
+    <!-- 벙거지 모자 -->
+    <path fill="url(#g)" d="M150 142 Q150 72 256 72 Q362 72 362 142 Q362 160 340 160 L172 160 Q150 160 150 142 Z"/>
+    <!-- 머리·몸통 실루엣 -->
+    <path fill="url(#g)" d="M182 168 L330 168 Q342 250 358 340 Q374 420 322 438 L190 438 Q138 420 154 340 Q170 250 182 168 Z"/>
+  </g>
+  <!-- 얼굴·팔 디테일 (흰색 반투명) -->
+  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.42" stroke-linecap="round">
+    <circle cx="218" cy="222" r="21" stroke-width="11"/>
+    <circle cx="294" cy="222" r="21" stroke-width="11"/>
+    <path d="M256 218 L256 272" stroke-width="13"/>
+    <path d="M228 298 Q256 314 284 298" stroke-width="11"/>
+    <path d="M168 316 Q206 352 248 362" stroke-width="13"/>
+    <path d="M344 316 Q306 352 264 362" stroke-width="13"/>
+  </g>
+</svg>

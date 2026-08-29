@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ko" class="theme-dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제주 반려견 동반 여행 대시보드 · 2026.10.07~10.10</title>
+<!-- v1 (2026.08.29) : 확정판 — A안(협재 돌담채 2박 + 월정리 쉬엉갑서예 1박) · Firebase 동기화(dashboards/jeju2026, schema v2) · 표준 아이콘 연결 -->
+<!-- 시안 v4 (2026.08.29) : 사용경비 종합 탭(도넛·DAY별 차트·필터·사전결제 자동등록) -->
+<!-- 시안 v3 (2026.08.29) : 일자별 숙소카드 · 사용경비 박스(예상 대비 실제) · 상세/티맵 버튼 우측 배치 -->
+<!-- 시안 v2 (2026.08.29) : 네이버지도 링크 전환 · 장소 세부정보 모달(영업시간·전화) · 티맵 딥링크 · 확정가 반영 -->
+<!-- 시안 v1 (2026.08.29) : 최초 생성 — 일자별 Leaflet 동선 지도 · 6개 탭 · CRUD · localStorage -->
+<link rel="icon" type="image/svg+xml" href="jeju-favicon.svg">
+<link rel="apple-touch-icon" href="jeju-icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="제주여행">
+<meta name="theme-color" content="#0A0A0A">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+var firebaseConfig={apiKey:"AIzaSyCJbue9jFzeUTWImTm1zbFQ6V3TDZp1i-0",authDomain:"travel-dashboard-sync.firebaseapp.com",databaseURL:"https://travel-dashboard-sync-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"travel-dashboard-sync",storageBucket:"travel-dashboard-sync.firebasestorage.app",messagingSenderId:"501772785879",appId:"1:501772785879:web:f66a2a10911d16454d3892"};
+var fbDB=null,FB_REF='dashboards/jeju2026';
+try{firebase.initializeApp(firebaseConfig);fbDB=firebase.database()}catch(e){console.error('Firebase init 실패:',e)}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<style>
+:root{--radius:14px}
+html.theme-dark{--bg:#0A0A0A;--surface:#141414;--surface-hover:#1C1C1C;--border:rgba(255,255,255,.07);--text:#EDEDED;--text-secondary:#8a8a8a;--accent:#3b82f6;--accent-secondary:#8b5cf6;--positive:#10b981;--negative:#f43f5e;--warning:#f59e0b;--info:#06b6d4;
+--day1:#3b82f6;--day2:#8b5cf6;--day3:#10b981;--day4:#f59e0b;
+--tag-flight:rgba(59,130,246,.15);--tag-flight-text:#60a5fa;--tag-food:rgba(249,115,22,.15);--tag-food-text:#fb923c;--tag-cafe:rgba(139,92,246,.15);--tag-cafe-text:#a78bfa;--tag-spot:rgba(16,185,129,.15);--tag-spot-text:#34d399;--tag-hotel:rgba(236,72,153,.15);--tag-hotel-text:#f472b6;--tag-transport:rgba(6,182,212,.15);--tag-transport-text:#22d3ee;--tag-night:rgba(245,158,11,.15);--tag-night-text:#fbbf24;--tag-dog:rgba(234,179,8,.16);--tag-dog-text:#fde047}
+html.theme-light{--bg:#FAFAF9;--surface:#FFFFFF;--surface-hover:#F5F5F4;--border:#e5e5e5;--text:#1a1a1a;--text-secondary:#666;--accent:#2563eb;--accent-secondary:#7c3aed;--positive:#059669;--negative:#e11d48;--warning:#d97706;--info:#0ea5e9;
+--day1:#2563eb;--day2:#7c3aed;--day3:#059669;--day4:#d97706;
+--tag-flight:rgba(37,99,235,.1);--tag-flight-text:#2563eb;--tag-food:rgba(234,88,12,.1);--tag-food-text:#c2410c;--tag-cafe:rgba(124,58,237,.1);--tag-cafe-text:#6d28d9;--tag-spot:rgba(5,150,105,.1);--tag-spot-text:#047857;--tag-hotel:rgba(219,39,119,.1);--tag-hotel-text:#be185d;--tag-transport:rgba(14,165,233,.1);--tag-transport-text:#0369a1;--tag-night:rgba(217,119,6,.1);--tag-night-text:#b45309;--tag-dog:rgba(202,138,4,.12);--tag-dog-text:#a16207}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR','Inter',sans-serif;line-height:1.6;transition:background .3s,color .3s}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+a{color:var(--accent);text-decoration:none}
+/* menu */
+.viz-menu{position:fixed;top:16px;right:16px;z-index:1200}
+.viz-menu-toggle{background:var(--surface);border:1px solid var(--border);color:var(--text);width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:18px}
+.viz-menu-dropdown{display:none;position:absolute;right:0;top:50px;background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:190px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.viz-menu-dropdown.open{display:block}
+.viz-menu-dropdown button{display:block;width:100%;background:none;border:none;color:var(--text);text-align:left;padding:11px 16px;font-size:13.5px;cursor:pointer;font-family:inherit}
+.viz-menu-dropdown button:hover{background:var(--surface-hover)}
+.menu-sep{height:1px;background:var(--border);margin:4px 0}
+/* hero */
+.hero{padding:64px 0 36px;text-align:center}
+.hero-badge{display:inline-flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);padding:7px 16px;border-radius:999px;font-size:13px;color:var(--text-secondary)}
+.hero h1{font-size:clamp(28px,5vw,44px);font-weight:900;margin:16px 0 8px;letter-spacing:-.02em}
+.hero h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent-secondary));-webkit-background-clip:text;background-clip:text;color:transparent}
+.subtitle{color:var(--text-secondary);font-size:15px}
+.draft-ribbon{display:inline-block;margin-top:12px;background:var(--tag-night);color:var(--tag-night-text);padding:4px 14px;border-radius:999px;font-size:12px;font-weight:700}
+/* kpi */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:28px 0}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:4px}
+.kpi-icon{font-size:20px}
+.kpi-label{font-size:12px;color:var(--text-secondary)}
+.kpi-value{font-size:20px;font-weight:800}
+.kpi-sub{font-size:12px;color:var(--text-secondary)}
+/* tabs */
+.main-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 20px}
+.main-tab{background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:.2s}
+.main-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.main-tab span{opacity:.7;font-size:12px}
+.main-panel{display:none}
+.main-panel.active{display:block;animation:fadeInUp .35s ease}
+/* day tabs */
+.day-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.day-tab{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:700;font-size:13.5px;font-family:inherit;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.day-tab .tab-date{font-size:11px;color:var(--text-secondary);font-weight:400}
+.day-tab.active{background:var(--surface-hover);box-shadow:0 0 0 1.5px var(--accent) inset}
+.day-content{display:none}
+.day-content.active{display:block;animation:fadeInUp .35s ease}
+.day-header{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.day-number{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:20px;flex-shrink:0}
+.day-meta h2{font-size:19px;font-weight:800}
+.day-meta p{font-size:13px;color:var(--text-secondary)}
+.sun-chip{display:inline-flex;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 16px;font-size:13px;margin-bottom:14px;flex-wrap:wrap}
+.sun-chip b{font-weight:700}
+/* day map */
+.day-map{height:340px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:20px;z-index:1}
+.map-caption{font-size:12px;color:var(--text-secondary);margin:-14px 0 18px;padding-left:2px}
+.num-pin{background:var(--accent);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+/* timeline */
+.timeline{position:relative;padding-left:26px}
+.timeline::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:14px}
+.tl-dot{position:absolute;left:-26px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:3px solid var(--accent)}
+.tl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative}
+.tl-time{font-size:12px;color:var(--text-secondary);font-weight:600;font-family:Inter}
+.tl-title{font-weight:800;font-size:15.5px;margin:2px 0}
+.tl-desc{font-size:13.5px;color:var(--text-secondary)}
+.tl-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11.5px;padding:3px 10px;border-radius:999px;font-weight:700}
+.tag-flight{background:var(--tag-flight);color:var(--tag-flight-text)}.tag-food{background:var(--tag-food);color:var(--tag-food-text)}.tag-cafe{background:var(--tag-cafe);color:var(--tag-cafe-text)}.tag-spot{background:var(--tag-spot);color:var(--tag-spot-text)}.tag-hotel{background:var(--tag-hotel);color:var(--tag-hotel-text)}.tag-transport{background:var(--tag-transport);color:var(--tag-transport-text)}.tag-night{background:var(--tag-night);color:var(--tag-night-text)}.tag-dog{background:var(--tag-dog);color:var(--tag-dog-text)}
+.map-link{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--surface-hover);border:1px solid var(--border);color:var(--text-secondary)}
+.nearby-box{margin-top:10px;background:var(--surface-hover);border:1px dashed var(--border);border-radius:10px;padding:10px 14px}
+.nearby-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.nearby-list{font-size:12.5px;color:var(--text-secondary)}
+/* region & cards */
+.region-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.region-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.region-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.region-count{opacity:.7;font-size:11px;margin-left:3px}
+.region-section{margin-bottom:26px}
+.region-section-title{font-weight:800;font-size:16px;margin-bottom:12px}
+.region-emoji{margin-right:6px}
+.list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.list-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;display:flex;flex-direction:column;gap:8px}
+.list-card-header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.list-card h3{font-size:16px;font-weight:800}
+.cn-name{font-size:12px;color:var(--text-secondary)}
+.badge-type{font-size:11px;padding:4px 10px;border-radius:999px;font-weight:700;white-space:nowrap}
+.badge-must{background:var(--tag-food);color:var(--tag-food-text)}
+.badge-local{background:var(--tag-spot);color:var(--tag-spot-text)}
+.badge-dessert{background:rgba(236,72,153,.15);color:#f472b6}
+.badge-view{background:rgba(6,182,212,.15);color:#22d3ee}
+.badge-market{background:var(--tag-night);color:var(--tag-night-text)}
+.badge-dog{background:var(--tag-dog);color:var(--tag-dog-text)}
+.badge-cafe-type{background:var(--tag-cafe);color:var(--tag-cafe-text)}
+.badge-blackpork{background:rgba(244,63,94,.15);color:#fb7185}
+.list-desc{font-size:13.5px;color:var(--text-secondary)}
+.reco{font-size:13px}
+.reco b{color:var(--tag-food-text)}
+.address{font-size:12px;color:var(--text-secondary)}
+.list-meta{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px}
+.price{font-size:13px;font-weight:700}
+.dogok{font-size:12px}
+/* hotel carousel */
+.hotel-carousel-wrap{max-width:640px;margin:0 auto}
+.hotel-carousel-viewport{overflow:hidden;border-radius:var(--radius)}
+.hotel-carousel-track{display:flex;transition:transform .38s cubic-bezier(.4,0,.2,1)}
+.hotel-card{min-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;position:relative}
+.hotel-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.hotel-name{font-size:19px;font-weight:900}
+.hotel-type-badge{background:var(--tag-hotel);color:var(--tag-hotel-text);font-size:12px;padding:4px 12px;border-radius:999px;font-weight:700}
+.hotel-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.hotel-info-item{background:var(--surface-hover);border-radius:10px;padding:10px 14px}
+.hotel-info-label{font-size:11px;color:var(--text-secondary)}
+.hotel-info-value{font-size:13.5px;font-weight:700}
+.hotel-nights-bar{display:flex;gap:8px;margin-bottom:14px}
+.hotel-night-chip{flex:1;background:var(--surface-hover);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center}
+.night-date{font-size:12px;font-weight:700}
+.night-label{font-size:11px;color:var(--text-secondary)}
+.hotel-price-row{display:flex;gap:10px;margin-bottom:14px}
+.hotel-price-item{flex:1;background:var(--surface-hover);border-radius:10px;padding:12px;text-align:center}
+.hotel-price-label{font-size:11px;color:var(--text-secondary)}
+.hotel-price-value{font-size:16px;font-weight:800}
+.hotel-footer{display:flex;gap:10px}
+.hotel-btn{flex:1;text-align:center;padding:11px;border-radius:10px;font-size:13.5px;font-weight:700}
+.hotel-btn-booking{background:var(--accent);color:#fff}
+.hotel-btn-map{background:var(--surface-hover);border:1px solid var(--border);color:var(--text)}
+.hotel-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px}
+.hotel-nav-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:50%;cursor:pointer}
+.hotel-nav-btn:disabled{opacity:.3;cursor:default}
+.hotel-dots{display:flex;gap:6px}
+.hotel-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer}
+.hotel-dot.active{background:var(--accent)}
+.hotel-counter{font-size:12px;color:var(--text-secondary);font-family:Inter}
+/* budget / info */
+.budget-section h2,.info-section h2{font-size:20px;font-weight:800;margin-bottom:16px}
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.budget-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.budget-card h3{font-size:15px;margin-bottom:10px}
+.budget-row{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0;color:var(--text-secondary)}
+.budget-row .amount{color:var(--text);font-weight:600}
+.budget-total{display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;font-weight:800}
+.budget-note{font-size:12px;color:var(--text-secondary);margin-top:14px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.info-card h3{font-size:15px;margin-bottom:8px}
+.info-card p,.info-card li{font-size:13.5px;color:var(--text-secondary)}
+.info-card ul{padding-left:18px}
+.highlight{color:var(--tag-night-text);font-weight:700}
+.sun-table{width:100%;border-collapse:collapse;font-size:13px}
+.sun-table th,.sun-table td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.sun-table th{color:var(--text-secondary);font-weight:600;font-size:12px}
+/* CRUD */
+.crud-bar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.btn-add{background:var(--surface);border:1px dashed var(--accent);color:var(--accent);padding:8px 18px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-delete{position:absolute;top:10px;right:10px;background:var(--surface-hover);border:1px solid var(--border);color:var(--negative);width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1300;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:22px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-title{font-weight:800;font-size:16px}
+.modal-close{background:none;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:var(--surface-hover);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-submit{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px;font-family:inherit}
+/* confirm */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1400;align-items:center;justify-content:center}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;text-align:center;max-width:320px;width:90%}
+.confirm-icon{font-size:30px}
+.confirm-title{font-weight:800;margin:8px 0 4px}
+.confirm-msg{font-size:13px;color:var(--text-secondary);margin-bottom:18px}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns button{flex:1;padding:11px;border-radius:10px;border:none;font-weight:700;cursor:pointer;font-family:inherit}
+.confirm-btn-cancel{background:var(--surface-hover);color:var(--text)}
+.confirm-btn-del{background:var(--negative);color:#fff}
+/* tl actions (상세/티맵 — 제목 우측) */
+.tl-actions{position:absolute;top:12px;right:14px;display:flex;gap:6px}
+@media(max-width:600px){.tl-actions{position:static;margin-top:8px}}
+/* day hotel card */
+.day-hotel-card{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--tag-hotel-text);border-radius:12px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap}
+.dh-name{font-weight:800;font-size:14.5px}
+.dh-sub{font-size:12px;color:var(--text-secondary)}
+.dh-chip{font-size:11.5px;padding:3px 10px;border-radius:999px;font-weight:700}
+.dh-chip.type{background:var(--tag-hotel);color:var(--tag-hotel-text)}
+.dh-chip.night{background:rgba(236,72,153,.1);color:var(--tag-hotel-text)}
+.dh-chip.price{background:var(--tag-spot);color:var(--tag-spot-text)}
+.dh-right{margin-left:auto;display:flex;gap:6px}
+/* expense */
+.exp-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-top:20px}
+.exp-head{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:6px}
+.exp-head b{font-size:14.5px}
+.exp-bar-track{height:8px;background:var(--surface-hover);border-radius:99px;margin:10px 0;overflow:hidden}
+.exp-bar-fill{height:100%;border-radius:99px;background:var(--positive);transition:width .4s}
+.exp-bar-fill.warn{background:var(--warning)}
+.exp-bar-fill.over{background:var(--negative)}
+.exp-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-secondary);padding:4px 0;gap:8px;align-items:center;border-bottom:1px dashed var(--border)}
+.exp-row:last-child{border-bottom:none}
+.exp-row b{color:var(--text)}
+.exp-cat{font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--surface-hover);border:1px solid var(--border)}
+.exp-del{background:none;border:none;color:var(--negative);cursor:pointer;font-size:12px;padding:2px 6px}
+.exp-empty{font-size:12px;color:var(--text-secondary);padding:6px 0}
+/* spend tab */
+.spend-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:18px 0}
+.spend-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.spend-card h3{font-size:14.5px;margin-bottom:14px}
+.sp-donut-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.sp-donut{width:170px;height:170px;border-radius:50%;position:relative;flex-shrink:0}
+.sp-donut::after{content:'';position:absolute;inset:22%;border-radius:50%;background:var(--surface)}
+.sp-legend{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--text-secondary)}
+.sp-legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.sp-bar-row{margin-bottom:12px}
+.sp-bar-label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;color:var(--text-secondary)}
+.sp-bar-label b{color:var(--text)}
+.sp-track{height:9px;background:var(--surface-hover);border-radius:99px;overflow:hidden;margin-bottom:3px;position:relative}
+.sp-fill-budget{height:100%;background:var(--border);border-radius:99px}
+.sp-fill-actual{height:100%;background:var(--accent);border-radius:99px}
+.sp-fill-actual.over{background:var(--negative)}
+.sp-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;min-width:520px}
+.sp-table th{text-align:left;color:var(--text-secondary);font-weight:600;font-size:12px;padding:8px;border-bottom:1px solid var(--border)}
+.sp-table td{padding:9px 8px;border-bottom:1px solid var(--border)}
+.sp-pre-badge{font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--tag-night);color:var(--tag-night-text);font-weight:700}
+.sp-day-badge{font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--tag-flight);color:var(--tag-flight-text);font-weight:700}
+/* place detail */
+.detail-link{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--tag-spot);color:var(--tag-spot-text);border:none;cursor:pointer;font-weight:700;font-family:inherit}
+.tmap-link{font-size:11.5px;padding:3px 10px;border-radius:999px;background:var(--tag-transport);color:var(--tag-transport-text);font-weight:700}
+.pd-row{display:flex;gap:10px;padding:9px 2px;border-bottom:1px solid var(--border);font-size:13.5px;align-items:flex-start}
+.pd-row:last-of-type{border-bottom:none}
+.pd-ico{width:22px;flex-shrink:0;text-align:center}
+.pd-val{color:var(--text)}
+.pd-val a{color:var(--accent);font-weight:700}
+.pd-sub{color:var(--text-secondary);font-size:12px}
+.pd-cat{display:inline-block;background:var(--surface-hover);border:1px solid var(--border);border-radius:999px;padding:3px 12px;font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+.pd-btns{display:flex;gap:10px;margin-top:16px}
+.pd-btn{flex:1;text-align:center;padding:12px;border-radius:11px;font-size:13.5px;font-weight:800}
+.pd-btn-naver{background:#03C75A;color:#fff}
+.pd-btn-tmap{background:var(--tag-transport);color:var(--tag-transport-text);border:1px solid var(--border)}
+/* firebase sync */
+.sync-pill{position:fixed;bottom:16px;left:16px;z-index:1100;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--text-secondary);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--positive)}
+.sync-toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);z-index:1150;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:13px;transition:transform .3s;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-size:12px}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(32px);opacity:0}to{transform:translateY(0);opacity:1}}
+.animate{animation:fadeInUp .5s ease both}
+.delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}.delay-4{animation-delay:.32s}
+@media(max-width:768px){.hero{padding:44px 0 24px}.kpi-grid{grid-template-columns:1fr 1fr}.list-grid{grid-template-columns:1fr}.day-map{height:280px}}
+@media(min-width:600px){.modal-overlay{align-items:center}.modal-box{border-radius:20px}}
+@media print{.viz-menu,.main-tabs,.day-tabs,.region-filters,.crud-bar,.btn-delete{display:none!important}.main-panel,.day-content{display:block!important}.day-map{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="viz-menu">
+  <button class="viz-menu-toggle" onclick="toggleMenu()" aria-label="메뉴">☰</button>
+  <div class="viz-menu-dropdown" id="vizMenuDropdown">
+    <button onclick="cycleTheme()">🌓 테마 토글</button>
+    <button onclick="downloadImage()">🖼️ PNG 다운로드</button>
+    <button onclick="window.print()">🖨️ 인쇄 / PDF</button>
+    <div class="menu-sep"></div>
+    <button onclick="exportData()">📤 내 데이터 내보내기</button>
+    <button onclick="document.getElementById('importFileInput').click()">📥 데이터 불러오기</button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<section class="hero container">
+  <div class="hero-badge animate">✈ 진에어 LJ501 · LJ510 &nbsp;|&nbsp; 예약번호 XA3765</div>
+  <h1 class="animate delay-1">🐕 제주 <span class="grad">반려견 동반</span> 여행</h1>
+  <p class="subtitle animate delay-2">2026.10.07(수) ~ 10.10(토) · 3박 4일 · 협재 2박 + 월정리 1박 · 렌트카 · 소형견 2마리(각 4kg)</p>
+  <div class="draft-ribbon animate delay-3">☁️ v1 확정판 — Firebase 실시간 동기화 · 사용경비 추적 · 네이버지도/티맵 연동</div>
+</section>
+
+<div class="container">
+  <div class="kpi-grid">
+    <div class="kpi-card animate delay-1"><span class="kpi-icon">🗓️</span><span class="kpi-label">여행 기간</span><span class="kpi-value">3박 4일</span><span class="kpi-sub">10/7 07:30 도착 · 10/10 21:10 출발</span></div>
+    <div class="kpi-card animate delay-2"><span class="kpi-icon">✈️</span><span class="kpi-label">항공편</span><span class="kpi-value">LJ501 / LJ510</span><span class="kpi-sub">GMP↔CJU · 좌석 33B/45B</span></div>
+    <div class="kpi-card animate delay-3"><span class="kpi-icon">🏠</span><span class="kpi-label">숙소 (예약 확정)</span><span class="kpi-value">₩272,000</span><span class="kpi-sub">돌담채 15.2만(2박) + 쉬엉갑서예 12만(1박)</span></div>
+    <div class="kpi-card animate delay-4"><span class="kpi-icon">💰</span><span class="kpi-label">확정 경비</span><span class="kpi-value">₩859,800</span><span class="kpi-sub">항공 36.8만 + 숙소 27.2만 + 렌트카 22만</span></div>
+  </div>
+
+  <div class="main-tabs" role="tablist">
+    <button class="main-tab active" role="tab" onclick="showPanel('schedule',this)">📅 일정·지도</button>
+    <button class="main-tab" role="tab" onclick="showPanel('food',this)">🍜 맛집 <span>(6)</span></button>
+    <button class="main-tab" role="tab" onclick="showPanel('cafe',this)">☕ 카페 <span>(7)</span></button>
+    <button class="main-tab" role="tab" onclick="showPanel('hotel',this)">🏨 숙소</button>
+    <button class="main-tab" role="tab" onclick="showPanel('budget',this)">💰 예산</button>
+    <button class="main-tab" role="tab" onclick="showPanel('spend',this)">💸 사용경비</button>
+    <button class="main-tab" role="tab" onclick="showPanel('info',this)">ℹ️ 정보</button>
+  </div>
+
+  <!-- ============ 일정 ============ -->
+  <div class="main-panel active" id="panel-schedule">
+    <div class="day-tabs" role="tablist">
+      <button class="day-tab active" onclick="showDay(1,this)" style="border-left:3px solid var(--day1)">DAY 1<span class="tab-date">10/7 수 · 서부 훑기</span></button>
+      <button class="day-tab" onclick="showDay(2,this)" style="border-left:3px solid var(--day2)">DAY 2<span class="tab-date">10/8 목 · 협재 쉼</span></button>
+      <button class="day-tab" onclick="showDay(3,this)" style="border-left:3px solid var(--day3)">DAY 3<span class="tab-date">10/9 금 · 서→동 이동</span></button>
+      <button class="day-tab" onclick="showDay(4,this)" style="border-left:3px solid var(--day4)">DAY 4<span class="tab-date">10/10 토 · 동부→귀가</span></button>
+    </div>
+
+    <!-- DAY 1 -->
+    <div class="day-content active" id="day1">
+      <div class="day-header"><div class="day-number" style="background:var(--day1)">1</div><div class="day-meta"><h2>중산간·남서부 훑고 협재 입성</h2><p>10/7 (수) · 공항 → 애월 중산간 → 사계 → 한경 → 협재</p></div></div>
+      <div class="sun-chip">🌅 일출 <b>06:31</b> (기내·도착) &nbsp; 🌇 일몰 <b>18:14</b> — <b>신창풍차해안도로</b></div>
+      <div id="map-day1" class="day-map"></div>
+      <p class="map-caption">번호 순서 = 이동 동선 · 마커 클릭 시 장소명 표시</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">06:15 → 07:30</div><div class="tl-title">✈️ LJ501 김포 → 제주</div><div class="tl-desc">좌석 33B · 반려견 기내동반 체크인은 여유있게 (수하물 15kg)</div><div class="tl-tags"><span class="tag tag-flight">항공</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">07:30 ~ 08:30</div><div class="tl-title">🚗 렌트카 수령</div><div class="tl-desc">공항 렌터카하우스 → 셔틀 이동 포함 여유 1시간</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">09:00 ~ 10:30</div><div class="tl-title">⛰️ 새별오름</div><div class="tl-desc">10월 억새 절정. 목줄 필수, 동반 가능 여부 현장 안내판 확인</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕 목줄</span><a class="map-link" href="https://map.naver.com/p/search/새별오름" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">11:00 ~ 11:45</div><div class="tl-title">🍵 다과상점</div><div class="tl-desc">애월 유수암 한과·다과 상점 · <b>11:00 오픈</b>이라 새별오름 다음 순서로 배치 (일요일 휴무 — 수요일 OK)</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><a class="map-link" href="https://map.naver.com/p/search/제주 다과상점 유수암" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">12:30 ~ 13:30</div><div class="tl-title">🍚 점심 — 사계·안덕 일대 (미정)</div><div class="tl-desc">사계해변 근처 식당. 야외석 있는 곳 추천</div><div class="tl-tags"><span class="tag tag-food">맛집</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">13:30 ~ 14:30</div><div class="tl-title">🎨 소색채본</div><div class="tl-desc">사계 감성 공간 · 산방산·사계해변과 인접</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><a class="map-link" href="https://map.naver.com/p/search/소색채본" target="_blank">지도</a></div><div class="nearby-box"><div class="nearby-title">📍 근처</div><div class="nearby-list">사계해변(전 견종 가능) · 산방산 · 송악산둘레길</div></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">15:00 ~ 17:00</div><div class="tl-title">🌳 산양큰엉곶</div><div class="tl-desc">곶자왈 숲길 3.5km · 기찻길 포토존 · 목줄+배변봉투 필수</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕 전견종</span><a class="map-link" href="https://map.naver.com/p/search/산양큰엉곶" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">17:30 ~ 18:20</div><div class="tl-title">🌇 신창풍차해안도로 일몰</div><div class="tl-desc">일몰 18:14 · 풍차+바다 노을, 반려견 산책 자유</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-night">일몰</span><a class="map-link" href="https://map.naver.com/p/search/신창풍차해안도로" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">18:40 ~ 19:00</div><div class="tl-title">🛒 한림농협 하나로마트 장보기</div><div class="tl-desc">신창 → 협재 경로상 · 저녁 바비큐 재료 (영업시간 ~21시 내외 확인)</div><div class="tl-tags"><span class="tag tag-transport">장보기</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">19:00 ~</div><div class="tl-title">🏠 돌담채 체크인 · 저녁</div><div class="tl-desc">협재2길 17-1 · 마당에서 강아지 휴식 + 저녁</div><div class="tl-tags"><span class="tag tag-hotel">숙소</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div class="day-content" id="day2">
+      <div class="day-header"><div class="day-number" style="background:var(--day2)">2</div><div class="day-meta"><h2>협재 근거리 — 강아지 쉬는 날</h2><p>10/8 (목) · 금능 → 한림공원 → 호텔샌드 → 협재 노을</p></div></div>
+      <div class="sun-chip">🌅 일출 <b>06:32</b> &nbsp; 🌇 일몰 <b>18:12</b> — <b>협재·금능 비양도 노을</b></div>
+      <div id="map-day2" class="day-map"></div>
+      <p class="map-caption">전 일정이 숙소 도보~차 10분 반경</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">08:00 ~ 09:30</div><div class="tl-title">🏖️ 금능해수욕장 아침 산책</div><div class="tl-desc">비양도 뷰 · 물 얕고 한적해 강아지 산책 최적</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕</span><a class="map-link" href="https://map.naver.com/p/search/금능해수욕장" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">10:00 ~ 12:00</div><div class="tl-title">🌸 한림공원</div><div class="tl-desc">코스모스·핑크뮬리·국화 시즌 · <b>7kg 미만 + 보호자 1인당 1마리</b> (2인 2마리 OK)</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕 7kg↓</span><a class="map-link" href="https://map.naver.com/p/search/한림공원" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">12:30 ~ 13:30</div><div class="tl-title">🍝 점심 — 협재 (키친오즈 등)</div><div class="tl-desc">키친오즈: 전 견종 동반 가능 파스타집 (협재로 208)</div><div class="tl-tags"><span class="tag tag-food">맛집</span><span class="tag tag-dog">🐕</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">14:00 ~ 15:30</div><div class="tl-title">☕ 호텔샌드</div><div class="tl-desc">협재해변 바로 앞 뷰 카페 · 야외석 반려견 동반 확인</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><a class="map-link" href="https://map.naver.com/p/search/호텔샌드" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">15:30 ~ 18:00</div><div class="tl-title">🏖️ 협재해수욕장 오후</div><div class="tl-desc">해변 산책 · 여유시간 (원하면 신창 재방문 or 낮잠)</div><div class="tl-tags"><span class="tag tag-spot">관광</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">18:12</div><div class="tl-title">🌇 협재 비양도 노을</div><div class="tl-desc">서부 최고 노을 명소가 숙소 앞</div><div class="tl-tags"><span class="tag tag-night">일몰</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day2)"></div><div class="tl-card"><div class="tl-time">18:30 ~</div><div class="tl-title">🛒 하나로마트 → 🏠 저녁</div><div class="tl-desc">한림농협 하나로마트(차 7분) 장보기 후 돌담채 저녁</div><div class="tl-tags"><span class="tag tag-hotel">숙소</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div class="day-content" id="day3">
+      <div class="day-header"><div class="day-number" style="background:var(--day3)">3</div><div class="day-meta"><h2>서 → 동 이동일 (조천 클러스터)</h2><p>10/9 (금) · 교래 → 와흘 → 선흘 → 함덕 → 월정리</p></div></div>
+      <div class="sun-chip">🌅 일출 <b>06:33</b> &nbsp; 🌇 일몰 <b>18:11</b> — <b>함덕 서우봉 노을</b></div>
+      <div id="map-day3" class="day-map"></div>
+      <p class="map-caption">협재 출발 → 중산간 횡단 → 북동 해안 → 월정리</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">~ 11:00</div><div class="tl-title">🏠 돌담채 체크아웃</div><div class="tl-desc">짐 정리 후 중산간 이동 (약 50분)</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">12:00 ~ 13:30</div><div class="tl-title">🥩 교래흑돼지 본점 (점심)</div><div class="tl-desc">교래리 흑돼지 · 반려견 동반 여부 사전 전화 확인, 안 되면 교대 식사</div><div class="tl-tags"><span class="tag tag-food">맛집</span><a class="map-link" href="https://map.naver.com/p/search/교래흑돼지 본점" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">14:00 ~ 15:00</div><div class="tl-title">🌾 와흘메밀마을</div><div class="tl-desc">10월 가을 메밀꽃 시즌 · 개화 상태 사전 확인</div><div class="tl-tags"><span class="tag tag-spot">관광</span><a class="map-link" href="https://map.naver.com/p/search/와흘메밀마을" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">15:20 ~ 16:10</div><div class="tl-title">☕ 오선 (선흘)</div><div class="tl-desc">선흘동1길 31 · 커피 타임</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><a class="map-link" href="https://map.naver.com/p/search/오선 선흘" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">16:30 ~ 18:20</div><div class="tl-title">🥾 서우봉둘레길 + 함덕 노을</div><div class="tl-desc">전 견종 동반 가능 둘레길 · 일몰 18:11 서우봉에서 노을 감상</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕 전견종</span><span class="tag tag-night">일몰</span><a class="map-link" href="https://map.naver.com/p/search/서우봉둘레길" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">18:30 ~ 18:50</div><div class="tl-title">🛒 김녕농협 하나로마트</div><div class="tl-desc">함덕→월정 동선 정중앙 (김녕로 107) · 바비큐 재료 (대안: 세화 구좌농협점)</div><div class="tl-tags"><span class="tag tag-transport">장보기</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day3)"></div><div class="tl-card"><div class="tl-time">19:00 ~</div><div class="tl-title">🏠 쉬엉갑서예 체크인 · 바비큐</div><div class="tl-desc">월정1길 17 · 월정리해변 도보권</div><div class="tl-tags"><span class="tag tag-hotel">숙소</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div class="day-content" id="day4">
+      <div class="day-header"><div class="day-number" style="background:var(--day4)">4</div><div class="day-meta"><h2>동부 총력전 → 공항</h2><p>10/10 (토) · 오저여 일출 → 세화오일장 → 송당 → 성산 → 공항</p></div></div>
+      <div class="sun-chip">🌅 일출 <b>06:33</b> — <b>오저여</b> (숙소 차 5분) &nbsp; 🌇 일몰 <b>18:07</b> (공항 이동 중) &nbsp; 🎪 <b>세화오일장 장날!</b> (끝자리 5·0일)</div>
+      <div id="map-day4" class="day-map"></div>
+      <p class="map-caption">월정 → 행원 → 세화 → 평대 → 송당 → 성산 → 공항</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">06:20 ~ 07:00</div><div class="tl-title">🌅 오저여 일출</div><div class="tl-desc">행원리 일출 명소 · 일출 06:33 · 06:15 숙소 출발</div><div class="tl-tags"><span class="tag tag-spot">일출</span><a class="map-link" href="https://map.naver.com/p/search/오저여" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">08:00 ~ 09:30</div><div class="tl-title">🎪 세화민속오일시장 (장날)</div><div class="tl-desc">세화해변 옆 오일장 · 아침거리 해결 · 붐비면 강아지는 교대 안기</div><div class="tl-tags"><span class="tag tag-spot">시장</span><a class="map-link" href="https://map.naver.com/p/search/세화민속오일시장" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">10:00 ~ 10:50</div><div class="tl-title">☕ 안도르 (송당)</div><div class="tl-desc">비자림로 오름뷰 숲속 카페 · 애견동반 가능 · 10:00 오픈</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><span class="tag tag-dog">🐕</span><a class="map-link" href="https://map.naver.com/p/search/카페 안도르" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">11:30 ~ 12:00</div><div class="tl-title">🍢 평대스낵</div><div class="tl-desc">평대리 분식 · <b>11:30 오픈</b>이라 안도르 다음 순서로 배치 · 가볍게 간식만 (점심은 맛나식당)</div><div class="tl-tags"><span class="tag tag-food">맛집</span><a class="map-link" href="https://map.naver.com/p/search/평대스낵" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">12:30 ~ 13:40</div><div class="tl-title">🐟 맛나식당 (점심)</div><div class="tl-desc">성산 갈치·고등어조림 · <b>영업 08:30~14:30 · 재료 소진 시 조기마감</b> — 웨이팅 감안 12:30 전 도착 권장 · 동반 불가 시 교대 식사</div><div class="tl-tags"><span class="tag tag-food">맛집</span><a class="map-link" href="https://map.naver.com/p/search/맛나식당 성산" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">14:00 ~ 14:50</div><div class="tl-title">📜 시인 이생진 시비거리</div><div class="tl-desc">성산리 해안 · 우도 조망 산책로</div><div class="tl-tags"><span class="tag tag-spot">관광</span><a class="map-link" href="https://map.naver.com/p/search/이생진 시비거리" target="_blank">지도</a></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">15:00 ~ 16:00</div><div class="tl-title">🦑 목화휴게소</div><div class="tl-desc">시흥리 올레1코스 바닷가 · 반건조 오징어 구이 · 11:30~18:00 (공항 가는 방향 길목)</div><div class="tl-tags"><span class="tag tag-cafe">간식</span><a class="map-link" href="https://map.naver.com/p/search/목화휴게소" target="_blank">지도</a></div><div class="nearby-box"><div class="nearby-title">📍 여유 시간이 있으면</div><div class="nearby-list">광치기해변 · 섭지코지 해안 산책</div></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">17:30 → 19:00</div><div class="tl-title">🚗 공항 이동 · 렌트카 반납</div><div class="tl-desc">성산 → 공항 약 1시간 + 반납·셔틀 여유</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">21:10 → 22:25</div><div class="tl-title">✈️ LJ510 제주 → 김포</div><div class="tl-desc">좌석 45B · 반려견 기내동반 체크인 여유있게</div><div class="tl-tags"><span class="tag tag-flight">항공</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 맛집 ============ -->
+  <div class="main-panel" id="panel-food">
+    <div class="region-filters" id="food-filters">
+      <button class="region-btn active" onclick="filterFood('all',this)">전체 <span class="region-count">6</span></button>
+      <button class="region-btn" onclick="filterFood('west',this)">🌊 협재·한림 <span class="region-count">1</span></button>
+      <button class="region-btn" onclick="filterFood('jocheon',this)">🌳 조천·교래 <span class="region-count">1</span></button>
+      <button class="region-btn" onclick="filterFood('gujwa',this)">🐚 구좌 <span class="region-count">2</span></button>
+      <button class="region-btn" onclick="filterFood('seongsan',this)">🌄 성산 <span class="region-count">2</span></button>
+    </div>
+    <div id="food-list">
+      <div class="region-section" data-region="west">
+        <div class="region-section-title"><span class="region-emoji">🌊</span> 협재·한림</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>키친오즈</h3><div class="cn-name">파스타 · 양식</div></div><span class="badge-type badge-dog">🐕 전견종</span></div><div class="list-desc">협재 애견동반 파스타 맛집</div><div class="reco">추천: <b>파스타 · 리조또</b></div><div class="address">제주시 한림읍 협재로 208</div><div class="list-meta"><span class="dogok">🐾 동반 가능</span><a class="map-link" href="https://map.naver.com/p/search/키친오즈" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+      <div class="region-section" data-region="jocheon">
+        <div class="region-section-title"><span class="region-emoji">🌳</span> 조천·교래</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>교래흑돼지 본점</h3><div class="cn-name">흑돼지 구이</div></div><span class="badge-type badge-blackpork">흑돼지</span></div><div class="list-desc">교래리 흑돼지 구이 — DAY 3 점심</div><div class="reco">추천: <b>흑돼지 오겹살</b></div><div class="address">제주시 조천읍 교래4길 73</div><div class="list-meta"><span class="dogok">🐾 동반 확인 필요</span><a class="map-link" href="https://map.naver.com/p/search/교래흑돼지 본점" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+      <div class="region-section" data-region="gujwa">
+        <div class="region-section-title"><span class="region-emoji">🐚</span> 구좌 (세화·평대·월정)</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>세화민속오일시장</h3><div class="cn-name">전통시장 먹거리</div></div><span class="badge-type badge-market">오일장</span></div><div class="list-desc">끝자리 5·0일 장날 — 10/10 장날! 세화해변 옆</div><div class="reco">추천: <b>전·오메기떡·해산물</b></div><div class="address">제주시 구좌읍 세화리 1500-44</div><div class="list-meta"><span class="dogok">🐾 혼잡 시 안고 이동</span><a class="map-link" href="https://map.naver.com/p/search/세화민속오일시장" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>평대스낵</h3><div class="cn-name">분식</div></div><span class="badge-type badge-local">로컬</span></div><div class="list-desc">평대리 로컬 분식 간식 — DAY 4 오전</div><div class="reco">추천: <b>떡볶이 · 튀김</b></div><div class="address">제주시 구좌읍 대수길 26</div><div class="list-meta"><span class="dogok">🐾 포장 추천</span><a class="map-link" href="https://map.naver.com/p/search/평대스낵" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+      <div class="region-section" data-region="seongsan">
+        <div class="region-section-title"><span class="region-emoji">🌄</span> 성산</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>맛나식당</h3><div class="cn-name">갈치·고등어조림</div></div><span class="badge-type badge-must">필수 맛집</span></div><div class="list-desc">성산 대표 조림 맛집 · 웨이팅 유명 — 오픈 전 도착 권장</div><div class="reco">추천: <b>갈치조림 · 고등어조림</b></div><div class="address">서귀포시 성산읍 동류암로 41</div><div class="list-meta"><span class="dogok">🐾 동반 불가 가능성 — 교대 식사</span><a class="map-link" href="https://map.naver.com/p/search/맛나식당 성산" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>목화휴게소</h3><div class="cn-name">오징어 버터구이</div></div><span class="badge-type badge-view">뷰 간식</span></div><div class="list-desc">해맞이해안로 명물 휴게소 — DAY 4 오후</div><div class="reco">추천: <b>오징어 버터구이 · 한치</b></div><div class="address">서귀포시 성산읍 해맞이해안로 2526</div><div class="list-meta"><span class="dogok">🐾 야외 취식 가능</span><a class="map-link" href="https://map.naver.com/p/search/목화휴게소" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 카페 ============ -->
+  <div class="main-panel" id="panel-cafe">
+    <div class="region-filters" id="cafe-filters">
+      <button class="region-btn active" onclick="filterCafe('all',this)">전체 <span class="region-count">7</span></button>
+      <button class="region-btn" onclick="filterCafe('west',this)">🌊 서부 <span class="region-count">4</span></button>
+      <button class="region-btn" onclick="filterCafe('east',this)">🐚 동부 <span class="region-count">3</span></button>
+    </div>
+    <div id="cafe-list">
+      <div class="region-section" data-region="west">
+        <div class="region-section-title"><span class="region-emoji">🌊</span> 서부 (애월·사계·협재)</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>다과상점</h3><div class="cn-name">한과 · 다과</div></div><span class="badge-type badge-dessert">디저트</span></div><div class="list-desc">유수암 감성 한과 상점 — DAY 1 첫 코스 (오픈시간 확인)</div><div class="reco">추천: <b>수제 한과 · 차</b></div><div class="address">제주시 애월읍 유수암로 51</div><div class="list-meta"><span class="dogok">🐾 확인 필요</span><a class="map-link" href="https://map.naver.com/p/search/다과상점" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>소색채본</h3><div class="cn-name">사계 감성 공간</div></div><span class="badge-type badge-cafe-type">감성</span></div><div class="list-desc">사계리 조용한 감성 스팟 — DAY 1 오후</div><div class="reco">추천: <b>시그니처 메뉴</b></div><div class="address">서귀포시 안덕면 사계남로216번길 24-61</div><div class="list-meta"><span class="dogok">🐾 확인 필요</span><a class="map-link" href="https://map.naver.com/p/search/소색채본" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>호텔샌드</h3><div class="cn-name">Hotel Sand</div></div><span class="badge-type badge-view">뷰 카페</span></div><div class="list-desc">협재해변 바로 앞 — DAY 2 오후</div><div class="reco">추천: <b>협재 뷰 음료</b></div><div class="address">제주시 한림읍 한림로 339</div><div class="list-meta"><span class="dogok">🐾 야외석 확인</span><a class="map-link" href="https://map.naver.com/p/search/호텔샌드" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>카페호나</h3><div class="cn-name">애월</div></div><span class="badge-type badge-dog">🐕 전견종</span></div><div class="list-desc">애월 애견동반 카페 — 예비 (DAY 1 아침 대안)</div><div class="reco">추천: <b>브런치</b></div><div class="address">제주시 애월읍 하소로 557-10</div><div class="list-meta"><span class="dogok">🐾 동반 가능</span><a class="map-link" href="https://map.naver.com/p/search/카페호나" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+      <div class="region-section" data-region="east">
+        <div class="region-section-title"><span class="region-emoji">🐚</span> 동부 (조천·구좌)</div>
+        <div class="list-grid">
+          <div class="list-card"><div class="list-card-header"><div><h3>오선</h3><div class="cn-name">선흘</div></div><span class="badge-type badge-local">로컬 감성</span></div><div class="list-desc">선흘리 조용한 카페 — DAY 3 오후</div><div class="reco">추천: <b>커피</b></div><div class="address">제주시 조천읍 선흘동1길 31, 1층</div><div class="list-meta"><span class="dogok">🐾 확인 필요</span><a class="map-link" href="https://map.naver.com/p/search/오선 선흘" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>안도르</h3><div class="cn-name">송당 · 숲속</div></div><span class="badge-type badge-dog">🐕 동반</span></div><div class="list-desc">비자림로 오름뷰 숲속 카페 — DAY 4 오전</div><div class="reco">추천: <b>시그니처 라떼</b></div><div class="address">제주시 구좌읍 비자림로 1647, 1층</div><div class="list-meta"><span class="dogok">🐾 동반 가능</span><a class="map-link" href="https://map.naver.com/p/search/카페 안도르" target="_blank">지도</a></div></div>
+          <div class="list-card"><div class="list-card-header"><div><h3>카페모알보알</h3><div class="cn-name">김녕 · 오션뷰</div></div><span class="badge-type badge-view">뷰 카페</span></div><div class="list-desc">보라카이 감성 오션뷰 — 예비 (동선상 제외, 여유 시 DAY 3)</div><div class="reco">추천: <b>야자수 뷰 음료</b></div><div class="address">제주시 구좌읍 구좌해안로 141</div><div class="list-meta"><span class="dogok">🐾 확인 필요</span><a class="map-link" href="https://map.naver.com/p/search/카페모알보알 제주" target="_blank">지도</a></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 숙소 ============ -->
+  <div class="main-panel" id="panel-hotel">
+    <div class="hotel-carousel-wrap">
+      <div class="hotel-carousel-viewport" id="hotelViewport">
+        <div class="hotel-carousel-track" id="hotelTrack">
+          <div class="hotel-card">
+            <div class="hotel-card-header"><div class="hotel-name">🏡 돌담채</div><span class="hotel-type-badge">독채 펜션</span></div>
+            <div class="hotel-info-grid">
+              <div class="hotel-info-item"><div class="hotel-info-label">지역</div><div class="hotel-info-value">협재 (한림읍)</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">주소</div><div class="hotel-info-value">협재2길 17-1</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">체크인</div><div class="hotel-info-value">10/7 (수) 15:00~</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">체크아웃</div><div class="hotel-info-value">10/9 (금) 11:00</div></div>
+            </div>
+            <div class="hotel-nights-bar">
+              <div class="hotel-night-chip"><div class="night-date">10/7 (수)</div><div class="night-label">1박</div></div>
+              <div class="hotel-night-chip"><div class="night-date">10/8 (목)</div><div class="night-label">2박</div></div>
+            </div>
+            <div class="hotel-price-row">
+              <div class="hotel-price-item"><div class="hotel-price-label">총 금액 (2박)</div><div class="hotel-price-value">₩152,000</div></div>
+              <div class="hotel-price-item"><div class="hotel-price-label">1박 환산</div><div class="hotel-price-value">₩76,000</div></div>
+            </div>
+            <div class="hotel-footer"><a class="hotel-btn hotel-btn-booking" href="#">예약 완료</a><a class="hotel-btn hotel-btn-map" href="https://map.naver.com/p/search/제주 한림읍 협재2길 17-1" target="_blank">지도</a></div>
+          </div>
+          <div class="hotel-card">
+            <div class="hotel-card-header"><div class="hotel-name">🏡 쉬엉갑서예</div><span class="hotel-type-badge">독채 펜션</span></div>
+            <div class="hotel-info-grid">
+              <div class="hotel-info-item"><div class="hotel-info-label">지역</div><div class="hotel-info-value">월정리 (구좌읍)</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">주소</div><div class="hotel-info-value">월정1길 17</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">체크인</div><div class="hotel-info-value">10/9 (금) 15:00~</div></div>
+              <div class="hotel-info-item"><div class="hotel-info-label">체크아웃</div><div class="hotel-info-value">10/10 (토) 11:00</div></div>
+            </div>
+            <div class="hotel-nights-bar">
+              <div class="hotel-night-chip"><div class="night-date">10/9 (금)</div><div class="night-label">1박</div></div>
+            </div>
+            <div class="hotel-price-row">
+              <div class="hotel-price-item"><div class="hotel-price-label">총 금액 (1박)</div><div class="hotel-price-value">₩120,000</div></div>
+              <div class="hotel-price-item"><div class="hotel-price-label">구성</div><div class="hotel-price-value">기본 8만 + 🐕 2만×2</div></div>
+            </div>
+            <div class="hotel-footer"><a class="hotel-btn hotel-btn-booking" href="#">예약 완료</a><a class="hotel-btn hotel-btn-map" href="https://map.naver.com/p/search/제주 구좌읍 월정1길 17" target="_blank">지도</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="hotel-nav" id="hotelNav">
+        <button class="hotel-nav-btn" id="hotelPrev" onclick="hotelSlide(-1)">◀</button>
+        <div class="hotel-dots" id="hotelDots"></div>
+        <span class="hotel-counter" id="hotelCounter">1 / 2</span>
+        <button class="hotel-nav-btn" id="hotelNext" onclick="hotelSlide(1)">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 예산 ============ -->
+  <div class="main-panel" id="panel-budget">
+    <div class="budget-section">
+      <h2>예상 경비 💰 <span style="font-size:12px;color:var(--text-secondary);font-weight:400">(✅ 확정 / 🔮 추정)</span></h2>
+      <div class="budget-grid">
+        <div class="budget-card"><h3>✈️ 항공 ✅</h3><div class="budget-row"><span class="label">LJ501/LJ510 왕복 (발권 완료)</span><span class="amount">₩367,800</span></div><div class="budget-row"><span class="label">반려견 기내동반 2마리 🔮</span><span class="amount">항공사 요금 확인</span></div><div class="budget-total"><span>소계</span><span>₩367,800+α</span></div></div>
+        <div class="budget-card"><h3>🏠 숙소 ✅</h3><div class="budget-row"><span class="label">돌담채 2박 (10/7~9)</span><span class="amount">₩152,000</span></div><div class="budget-row"><span class="label">쉬엉갑서예 1박 (기본 8만)</span><span class="amount">₩80,000</span></div><div class="budget-row"><span class="label">└ 애견동반비 2만 × 2마리</span><span class="amount">₩40,000</span></div><div class="budget-total"><span>소계</span><span>₩272,000</span></div></div>
+        <div class="budget-card"><h3>🚗 렌트카·유류</h3><div class="budget-row"><span class="label">렌트카 4일 ✅ (예상가)</span><span class="amount">₩220,000</span></div><div class="budget-row"><span class="label">유류비 (약 300km) 🔮</span><span class="amount">~₩50,000</span></div><div class="budget-total"><span>소계</span><span>~₩270,000</span></div></div>
+        <div class="budget-card"><h3>🍜 식비·기타 🔮</h3><div class="budget-row"><span class="label">식비 (2인 × 4일)</span><span class="amount">~₩300,000</span></div><div class="budget-row"><span class="label">입장료 (한림공원 1.5만×2 · 산양큰엉곶 8천×2 등)</span><span class="amount">~₩60,000</span></div><div class="budget-row"><span class="label">바비큐·마트 장보기 2회</span><span class="amount">~₩100,000</span></div><div class="budget-total"><span>소계</span><span>~₩460,000</span></div></div>
+      </div>
+      <p class="budget-note">※ 확정분 합계 ₩859,800 (항공 367,800 + 숙소 272,000 + 렌트카 220,000) · 추정 포함 총계 약 <b>₩137만</b> (반려견 기내요금 별도)</p>
+    </div>
+  </div>
+
+  <!-- ============ 사용경비 종합 ============ -->
+  <div class="main-panel" id="panel-spend">
+    <div class="budget-section">
+      <h2>사용경비 💸 <span style="font-size:12px;color:var(--text-secondary);font-weight:400">여행에서 사용한 실제 경비를 추적하세요 · 사전결제 포함</span></h2>
+      <div class="kpi-grid" id="sp-kpis"></div>
+      <div class="spend-charts">
+        <div class="spend-card"><h3>카테고리별 지출</h3><div class="sp-donut-wrap"><div class="sp-donut" id="sp-donut"></div><div class="sp-legend" id="sp-legend"></div></div></div>
+        <div class="spend-card"><h3>DAY별 지출 (예산 대비) <span style="font-size:11px;color:var(--text-secondary);font-weight:400">사전결제 제외</span></h3><div id="sp-bars"></div></div>
+      </div>
+      <div class="region-filters" id="sp-dayfilters"></div>
+      <div class="region-filters" id="sp-catfilters"></div>
+      <div style="overflow-x:auto"><table class="sp-table"><thead><tr><th>사용일자</th><th>카테고리</th><th>금액</th><th>사용처</th><th></th></tr></thead><tbody id="sp-tbody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ============ 정보 ============ -->
+  <div class="main-panel" id="panel-info">
+    <div class="info-section">
+      <h2>여행 필수 정보 ℹ️</h2>
+      <div class="info-grid">
+        <div class="info-card"><h3>🌅 일출·일몰 시간표</h3>
+          <table class="sun-table"><tr><th>날짜</th><th>일출</th><th>일몰</th><th>스팟</th></tr>
+          <tr><td>10/7 수</td><td>06:31</td><td><b>18:14</b></td><td>신창풍차해안도로 🌇</td></tr>
+          <tr><td>10/8 목</td><td>06:32</td><td><b>18:12</b></td><td>협재 비양도 노을 🌇</td></tr>
+          <tr><td>10/9 금</td><td>06:33</td><td><b>18:11</b></td><td>함덕 서우봉 🌇</td></tr>
+          <tr><td>10/10 토</td><td><b>06:33</b></td><td>18:07</td><td>오저여 일출 🌅</td></tr></table>
+          <p style="margin-top:8px;font-size:11px">천문 계산값 (±1~2분)</p></div>
+        <div class="info-card"><h3>🐕 반려견 규정 핵심</h3><ul>
+          <li><span class="highlight">동반 불가</span>: 비자림 · 사려니숲길 · 한라산</li>
+          <li>한림공원: 7kg 미만 + <b>1인당 1마리</b> (2인 2마리 OK)</li>
+          <li>새별오름: 목줄 필수, 현장 안내 확인</li>
+          <li>기내 동반: 항공사 사전예약 필수 (케이지 포함 무게 제한)</li>
+          <li>공통: 목줄 + 배변봉투 + 인식표</li></ul></div>
+        <div class="info-card"><h3>🛒 하나로마트 (바비큐 장보기)</h3><ul>
+          <li><b>한림농협점</b> — 한림리, 협재 차 7분 (D1·D2)</li>
+          <li><b>김녕농협점</b> — 김녕로 107, 함덕→월정 동선 (D3)</li>
+          <li>대안: 구좌농협점(세화) · 영업 보통 ~20~21시, 방문 전 확인</li></ul></div>
+        <div class="info-card"><h3>🎪 세화민속오일시장</h3><p>장날: 끝자리 <span class="highlight">5일 · 0일</span> → <b>10/10(토) 장날!</b><br>세화해변 옆 · 오전 일찍 방문 추천</p></div>
+        <div class="info-card"><h3>📞 주요 연락처</h3><ul>
+          <li>제주관광정보센터: 064-740-6000</li>
+          <li>식당 동반 여부 사전 전화 확인 권장 (교래흑돼지·맛나식당 등)</li>
+          <li>24시 동물병원: 제주시내 위치 사전 확인 권장</li></ul></div>
+        <div class="info-card"><h3>🧳 체크리스트</h3><ul>
+          <li>강아지: 케이지·목줄·배변봉투·매너벨트·사료·물그릇</li>
+          <li>기내동반 서류·동물등록 확인</li>
+          <li>차량용 카시트/안전벨트</li>
+          <li>10월 제주 기온 15~22℃ · 바람 대비 겉옷</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-schedule" onclick="if(event.target===this)closeModal('schedule')"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title">📅 일정 추가</span><button class="modal-close" onclick="closeModal('schedule')">✕</button></div>
+  <div class="form-grid-2"><div class="form-row"><label>날짜</label><select id="sf-day"><option value="1">DAY 1 (10/7)</option><option value="2">DAY 2 (10/8)</option><option value="3">DAY 3 (10/9)</option><option value="4">DAY 4 (10/10)</option></select></div>
+  <div class="form-row"><label>시간</label><input id="sf-time" placeholder="예: 14:00 ~ 15:00"></div></div>
+  <div class="form-row"><label>제목 *</label><input id="sf-title"></div>
+  <div class="form-row"><label>설명</label><textarea id="sf-desc" rows="2"></textarea></div>
+  <div class="form-row"><label>유형</label><select id="sf-type"><option value="spot">관광</option><option value="food">맛집</option><option value="cafe">카페</option><option value="hotel">숙소</option><option value="transport">이동</option><option value="flight">항공</option><option value="night">일몰/야간</option></select></div>
+  <button class="btn-submit" onclick="submitSchedule()">추가하기</button></div></div>
+
+<div class="modal-overlay" id="modal-food" onclick="if(event.target===this)closeModal('food')"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title">🍜 맛집 추가</span><button class="modal-close" onclick="closeModal('food')">✕</button></div>
+  <div class="form-row"><label>이름 *</label><input id="ff-name"></div>
+  <div class="form-grid-2"><div class="form-row"><label>지역</label><select id="ff-region"><option value="west">협재·한림</option><option value="jocheon">조천·교래</option><option value="gujwa">구좌</option><option value="seongsan">성산</option></select></div>
+  <div class="form-row"><label>유형</label><select id="ff-badge"><option value="badge-must">필수 맛집</option><option value="badge-blackpork">흑돼지</option><option value="badge-local">로컬</option><option value="badge-market">시장</option><option value="badge-view">뷰 맛집</option><option value="badge-dog">🐕 애견동반</option></select></div></div>
+  <div class="form-row"><label>설명</label><textarea id="ff-desc" rows="2"></textarea></div>
+  <div class="form-grid-2"><div class="form-row"><label>추천 메뉴</label><input id="ff-reco"></div><div class="form-row"><label>가격(원)</label><input id="ff-price"></div></div>
+  <div class="form-row"><label>주소</label><input id="ff-addr"></div>
+  <div class="form-row"><label>지도 링크</label><input id="ff-map" placeholder="https://"></div>
+  <button class="btn-submit" onclick="submitFood()">추가하기</button></div></div>
+
+<div class="modal-overlay" id="modal-cafe" onclick="if(event.target===this)closeModal('cafe')"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title">☕ 카페 추가</span><button class="modal-close" onclick="closeModal('cafe')">✕</button></div>
+  <div class="form-row"><label>이름 *</label><input id="cf-name"></div>
+  <div class="form-grid-2"><div class="form-row"><label>지역</label><select id="cf-region"><option value="west">서부</option><option value="east">동부</option></select></div>
+  <div class="form-row"><label>유형</label><select id="cf-badge"><option value="badge-view">뷰 카페</option><option value="badge-dessert">디저트</option><option value="badge-cafe-type">감성</option><option value="badge-local">로컬</option><option value="badge-dog">🐕 애견동반</option></select></div></div>
+  <div class="form-row"><label>설명</label><textarea id="cf-desc" rows="2"></textarea></div>
+  <div class="form-grid-2"><div class="form-row"><label>추천 메뉴</label><input id="cf-reco"></div><div class="form-row"><label>가격(원)</label><input id="cf-price"></div></div>
+  <div class="form-row"><label>주소</label><input id="cf-addr"></div>
+  <div class="form-row"><label>지도 링크</label><input id="cf-map" placeholder="https://"></div>
+  <button class="btn-submit" onclick="submitCafe()">추가하기</button></div></div>
+
+<div class="modal-overlay" id="modal-hotel" onclick="if(event.target===this)closeModal('hotel')"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title">🏨 숙소 추가</span><button class="modal-close" onclick="closeModal('hotel')">✕</button></div>
+  <div class="form-row"><label>숙소명 *</label><input id="hf-name"></div>
+  <div class="form-grid-2"><div class="form-row"><label>유형</label><select id="hf-type"><option>독채 펜션</option><option>호텔</option><option>에어비앤비</option><option>게스트하우스</option></select></div>
+  <div class="form-row"><label>지역</label><input id="hf-region"></div></div>
+  <div class="form-grid-2"><div class="form-row"><label>체크인</label><input id="hf-cin" placeholder="10/7"></div><div class="form-row"><label>체크아웃</label><input id="hf-cout" placeholder="10/9"></div></div>
+  <div class="form-grid-2"><div class="form-row"><label>박수</label><input id="hf-nights" type="number" min="1" value="1"></div><div class="form-row"><label>총 금액(원)</label><input id="hf-price"></div></div>
+  <div class="form-row"><label>지도 링크</label><input id="hf-map" placeholder="https://"></div>
+  <button class="btn-submit" onclick="submitHotel()">추가하기</button></div></div>
+
+<div class="modal-overlay" id="modal-expense" onclick="if(event.target===this)closeModal('expense')"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title">💸 사용경비 추가</span><button class="modal-close" onclick="closeModal('expense')">✕</button></div>
+  <div class="form-grid-2"><div class="form-row"><label>날짜</label><select id="ef-day"><option value="1">DAY 1 (10/7)</option><option value="2">DAY 2 (10/8)</option><option value="3">DAY 3 (10/9)</option><option value="4">DAY 4 (10/10)</option><option value="pre">💳 사전결제</option></select></div>
+  <div class="form-row"><label>분류</label><select id="ef-cat"><option>식비</option><option>카페·간식</option><option>입장료</option><option>교통·주유</option><option>장보기</option><option>숙박</option><option>항공</option><option>기타</option></select></div></div>
+  <div class="form-row"><label>항목명 *</label><input id="ef-title" placeholder="예: 교래흑돼지 점심"></div>
+  <div class="form-row"><label>금액(원) *</label><input id="ef-amt" type="number" inputmode="numeric" placeholder="예: 68000"></div>
+  <button class="btn-submit" onclick="submitExpense()">추가하기</button></div></div>
+
+<div class="modal-overlay" id="modal-place" onclick="if(event.target===this)closePlaceModal()"><div class="modal-box">
+  <div class="modal-header"><span class="modal-title" id="pm-title">장소 정보</span><button class="modal-close" onclick="closePlaceModal()">✕</button></div>
+  <div id="pm-body"></div>
+</div></div>
+
+<div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()"><div class="confirm-box">
+  <div class="confirm-icon">🗑️</div><div class="confirm-title">삭제할까요?</div><div class="confirm-msg">이 항목을 삭제하면 되돌릴 수 없어요.</div>
+  <div class="confirm-btns"><button class="confirm-btn-cancel" onclick="closeConfirm()">취소</button><button class="confirm-btn-del" id="confirmDelBtn">삭제</button></div></div></div>
+
+<div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">☁️ 연결 중...</span></div>
+<div class="sync-toast" id="syncToast"></div>
+
+<footer>🐕 제주 반려견 동반 여행 대시보드 · <b>v1 확정판</b> · 2026.08.29 · A안(협재 돌담채 2박 + 월정리 쉬엉갑서예 1박) · 확정경비 ₩859,800<br>일출·일몰: 천문 계산값 · 장소 정보: 네이버지도 기준 조사(✔) · 지도 좌표: 근사치(확정 시 보정) · 동반 규정은 방문 전 재확인</footer>
+
+<script>
+/* ===== 상수 ===== */
+var TRIP_CODE='jeju_202610_v1';
+var LS={food:TRIP_CODE+'_food',cafe:TRIP_CODE+'_cafe',schedule:TRIP_CODE+'_schedule',hotel:TRIP_CODE+'_hotel',expense:TRIP_CODE+'_expense'};
+var DAY_COLOR={'1':'var(--day1)','2':'var(--day2)','3':'var(--day3)','4':'var(--day4)'};
+var TAG_LABEL={flight:'항공',food:'맛집',cafe:'카페',spot:'관광',hotel:'숙소',transport:'이동',night:'일몰/야간'};
+var BADGE_FOOD={'badge-must':'필수 맛집','badge-blackpork':'흑돼지','badge-local':'로컬','badge-market':'시장','badge-view':'뷰 맛집','badge-dog':'🐕 애견동반'};
+var BADGE_CAFE={'badge-view':'뷰 카페','badge-dessert':'디저트','badge-cafe-type':'감성','badge-local':'로컬','badge-dog':'🐕 애견동반'};
+
+/* ===== 메뉴 & 테마 ===== */
+var menuOpen=false;
+function toggleMenu(){menuOpen=!menuOpen;document.getElementById('vizMenuDropdown').classList.toggle('open',menuOpen)}
+document.addEventListener('click',function(e){if(menuOpen&&!e.target.closest('.viz-menu')){menuOpen=false;document.getElementById('vizMenuDropdown').classList.remove('open')}});
+function cycleTheme(){var h=document.documentElement;var dark=h.classList.contains('theme-dark');h.classList.toggle('theme-dark',!dark);h.classList.toggle('theme-light',dark);updateTiles()}
+function downloadImage(){htmlToImage.toPng(document.body,{backgroundColor:getComputedStyle(document.body).backgroundColor}).then(function(url){var a=document.createElement('a');a.download='제주여행대시보드.png';a.href=url;a.click()})}
+
+/* ===== 패널/탭 ===== */
+function showPanel(name,btn){document.querySelectorAll('.main-panel').forEach(function(p){p.classList.remove('active')});document.getElementById('panel-'+name).classList.add('active');document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active')});if(btn)btn.classList.add('active');if(name==='schedule')refreshVisibleMap();if(name==='spend')renderSpend()}
+function showDay(n,btn){document.querySelectorAll('.day-content').forEach(function(d){d.classList.remove('active')});document.getElementById('day'+n).classList.add('active');document.querySelectorAll('.day-tab').forEach(function(t){t.classList.remove('active')});if(btn)btn.classList.add('active');setTimeout(function(){if(MAPS[n]){MAPS[n].invalidateSize();MAPS[n].fitBounds(BOUNDS[n],{padding:[28,28]})}},60)}
+function filterFood(key,btn){applyFilter('food-list',key);setActive('food-filters',btn)}
+function filterCafe(key,btn){applyFilter('cafe-list',key);setActive('cafe-filters',btn)}
+function applyFilter(listId,key){document.querySelectorAll('#'+listId+' .region-section').forEach(function(s){s.style.display=(key==='all'||s.dataset.region===key)?'':'none'})}
+function setActive(filterId,btn){document.querySelectorAll('#'+filterId+' .region-btn').forEach(function(b){b.classList.remove('active')});if(btn)btn.classList.add('active')}
+
+/* ===== 일자별 지도 (Leaflet) — 좌표는 시안 근사치 ===== */
+var DAY_ROUTES={
+ 1:[['제주공항 · 렌트카',33.5066,126.4927],['다과상점',33.4267,126.3944],['새별오름',33.3622,126.3571],['소색채본 (사계)',33.2337,126.3096],['산양큰엉곶',33.3182,126.2531],['신창풍차해안도로 🌇',33.3444,126.1766],['한림 하나로마트',33.4145,126.2622],['돌담채 (협재)',33.3940,126.2434]],
+ 2:[['돌담채 (협재)',33.3940,126.2434],['금능해수욕장',33.3903,126.2355],['한림공원',33.3894,126.2394],['호텔샌드',33.3937,126.2417],['협재해수욕장 🌇',33.3941,126.2401]],
+ 3:[['돌담채 출발',33.3940,126.2434],['교래흑돼지 본점',33.4342,126.6683],['와흘메밀마을',33.4776,126.6252],['오선 (선흘)',33.4720,126.7120],['서우봉·함덕 🌇',33.5432,126.6690],['김녕 하나로마트',33.5575,126.7465],['쉬엉갑서예 (월정리)',33.5561,126.7957]],
+ 4:[['쉬엉갑서예 출발',33.5561,126.7957],['오저여 일출 🌅',33.5539,126.8215],['세화민속오일시장',33.5251,126.8608],['안도르 (송당)',33.4589,126.7885],['평대스낵',33.5380,126.8430],['맛나식당 (성산)',33.4506,126.9180],['시비거리',33.4740,126.9330],['목화휴게소 (시흥리)',33.4770,126.9200],['제주공항 ✈️',33.5066,126.4927]]
+};
+var MAPS={},BOUNDS={},TILELAYERS=[];
+var DAY_CSS={1:'#3b82f6',2:'#8b5cf6',3:'#10b981',4:'#f59e0b'};
+function tileUrl(){return document.documentElement.classList.contains('theme-dark')?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png':'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'}
+function initMaps(){Object.keys(DAY_ROUTES).forEach(function(n){
+  var pts=DAY_ROUTES[n],color=DAY_CSS[n];
+  var map=L.map('map-day'+n,{scrollWheelZoom:false,attributionControl:true});
+  var tl=L.tileLayer(tileUrl(),{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:18});
+  tl.addTo(map);TILELAYERS.push(tl);
+  var latlngs=[];
+  pts.forEach(function(p,i){var ll=[p[1],p[2]];latlngs.push(ll);
+    L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="num-pin" style="background:'+color+'">'+(i+1)+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}).addTo(map).bindPopup('<b>'+(i+1)+'. '+p[0]+'</b>');});
+  L.polyline(latlngs,{color:color,weight:3,opacity:.75,dashArray:'6 8'}).addTo(map);
+  var b=L.latLngBounds(latlngs);MAPS[n]=map;BOUNDS[n]=b;map.fitBounds(b,{padding:[28,28]});
+})}
+function updateTiles(){TILELAYERS.forEach(function(t){t.setUrl(tileUrl())})}
+function refreshVisibleMap(){setTimeout(function(){Object.keys(MAPS).forEach(function(n){if(document.getElementById('day'+n).classList.contains('active')){MAPS[n].invalidateSize();MAPS[n].fitBounds(BOUNDS[n],{padding:[28,28]})}})},60)}
+
+/* ===== 호텔 캐러셀 ===== */
+(function(){var idx=0,track,cards,dotsWrap,counter,prevBtn,nextBtn,total=0;
+function init(){track=document.getElementById('hotelTrack');cards=track.children;total=cards.length;dotsWrap=document.getElementById('hotelDots');counter=document.getElementById('hotelCounter');prevBtn=document.getElementById('hotelPrev');nextBtn=document.getElementById('hotelNext');
+dotsWrap.innerHTML='';for(var i=0;i<total;i++){(function(i){var d=document.createElement('div');d.className='hotel-dot'+(i===idx?' active':'');d.onclick=function(){goTo(i)};dotsWrap.appendChild(d)})(i)}update();
+var vp=document.getElementById('hotelViewport'),sx=null;
+vp.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+vp.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;if(dx>40)goTo(idx-1);else if(dx<-40)goTo(idx+1);sx=null},{passive:true});
+var mx=null;vp.addEventListener('mousedown',function(e){mx=e.clientX});
+vp.addEventListener('mouseup',function(e){if(mx===null)return;var dx=e.clientX-mx;if(dx>40)goTo(idx-1);else if(dx<-40)goTo(idx+1);mx=null})}
+function goTo(n){idx=Math.max(0,Math.min(total-1,n));update()}
+function update(){track.style.transform='translateX(-'+(idx*100)+'%)';var ds=dotsWrap.children;for(var i=0;i<ds.length;i++)ds[i].classList.toggle('active',i===idx);counter.textContent=(idx+1)+' / '+total;prevBtn.disabled=idx===0;nextBtn.disabled=idx===total-1}
+window.hotelSlide=function(dir){goTo(idx+dir)};window.hotelReinit=function(){idx=0;init()};
+document.addEventListener('DOMContentLoaded',init)})();
+
+/* ===== localStorage / CRUD ===== */
+function lsLoad(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return[]}}
+function lsSave(k,a){try{localStorage.setItem(k,JSON.stringify(a))}catch(e){}if(typeof scheduleSyncToFirebase==='function')scheduleSyncToFirebase()}
+function lsAdd(k,d){var a=lsLoad(k);d._id=Date.now()+'_'+Math.random().toString(36).slice(2,8);a.push(d);lsSave(k,a);return d._id}
+function lsRemove(k,id){lsSave(k,lsLoad(k).filter(function(x){return x._id!==id}))}
+var _pendingDel=null;
+function showConfirm(cb){_pendingDel=cb;document.getElementById('confirmOverlay').classList.add('open')}
+function closeConfirm(){_pendingDel=null;document.getElementById('confirmOverlay').classList.remove('open')}
+document.getElementById('confirmDelBtn').onclick=function(){if(_pendingDel)_pendingDel();closeConfirm()};
+function makeDelBtn(onDel){var b=document.createElement('button');b.className='btn-delete';b.innerHTML='✕';b.onclick=function(e){e.stopPropagation();showConfirm(onDel)};return b}
+function openModal(n){document.getElementById('modal-'+n).classList.add('open');document.body.style.overflow='hidden'}
+function closeModal(n){document.getElementById('modal-'+n).classList.remove('open');document.body.style.overflow=''}
+function initCrudBars(){[['panel-schedule','schedule','📅 일정 추가'],['panel-food','food','🍜 맛집 추가'],['panel-cafe','cafe','☕ 카페 추가'],['panel-hotel','hotel','🏨 숙소 추가']].forEach(function(cfg){
+var panel=document.getElementById(cfg[0]);var bar=document.createElement('div');bar.className='crud-bar';bar.style.gap='8px';
+if(cfg[1]==='schedule'){var eb=document.createElement('button');eb.className='btn-add';eb.textContent='+ 💸 사용경비';eb.onclick=function(){openModal('expense')};bar.appendChild(eb)}
+var btn=document.createElement('button');btn.className='btn-add';btn.textContent='+ '+cfg[2];btn.onclick=function(){openModal(cfg[1])};bar.appendChild(btn);panel.insertBefore(bar,panel.firstChild)});loadStoredItems()}
+
+/* 카드 빌더 */
+function buildFoodCard(d,id){return buildListCard(d,id,BADGE_FOOD,LS.food)}
+function buildCafeCard(d,id){return buildListCard(d,id,BADGE_CAFE,LS.cafe)}
+function buildListCard(d,id,badges,lsKey){var c=document.createElement('div');c.className='list-card';
+c.innerHTML='<div class="list-card-header"><div><h3></h3></div><span class="badge-type '+(d.badge||'badge-local')+'">'+(badges[d.badge]||'기타')+'</span></div>'+(d.desc?'<div class="list-desc"></div>':'')+(d.reco?'<div class="reco">추천: <b></b></div>':'')+(d.addr?'<div class="address"></div>':'')+'<div class="list-meta"><span class="price">'+(d.price?'~'+Number(d.price).toLocaleString()+'원':'')+'</span>'+(d.map?'<a class="map-link" target="_blank">지도</a>':'')+'</div>';
+c.querySelector('h3').textContent=d.name;if(d.desc)c.querySelector('.list-desc').textContent=d.desc;if(d.reco)c.querySelector('.reco b').textContent=d.reco;if(d.addr)c.querySelector('.address').textContent=d.addr;if(d.map)c.querySelector('.map-link').href=d.map;
+c.appendChild(makeDelBtn(function(){lsRemove(lsKey,id);c.remove()}));return c}
+function buildScheduleItem(d,id){var it=document.createElement('div');it.className='tl-item';
+it.innerHTML='<div class="tl-dot" style="border-color:'+(DAY_COLOR[d.day]||'var(--accent)')+'"></div><div class="tl-card"><div class="tl-time"></div><div class="tl-title"></div><div class="tl-desc"></div><div class="tl-tags"><span class="tag tag-'+(d.type||'spot')+'">'+(TAG_LABEL[d.type]||'관광')+'</span></div></div>';
+it.querySelector('.tl-time').textContent=d.time||'';it.querySelector('.tl-title').textContent=d.title;it.querySelector('.tl-desc').textContent=d.desc||'';
+it.querySelector('.tl-card').appendChild(makeDelBtn(function(){lsRemove(LS.schedule,id);it.remove()}));return it}
+function buildHotelCard(d,id){var c=document.createElement('div');c.className='hotel-card';
+c.innerHTML='<div class="hotel-card-header"><div class="hotel-name"></div><span class="hotel-type-badge">'+(d.type||'숙소')+'</span></div><div class="hotel-info-grid"><div class="hotel-info-item"><div class="hotel-info-label">지역</div><div class="hotel-info-value"></div></div><div class="hotel-info-item"><div class="hotel-info-label">체크인/아웃</div><div class="hotel-info-value">'+(d.cin||'')+' → '+(d.cout||'')+'</div></div></div><div class="hotel-price-row"><div class="hotel-price-item"><div class="hotel-price-label">박수</div><div class="hotel-price-value">'+(d.nights||1)+'박</div></div><div class="hotel-price-item"><div class="hotel-price-label">총 금액</div><div class="hotel-price-value">'+(d.price?Number(d.price).toLocaleString()+'원':'-')+'</div></div></div>'+(d.map?'<div class="hotel-footer"><a class="hotel-btn hotel-btn-map" target="_blank">지도</a></div>':'');
+c.querySelector('.hotel-name').textContent='🏡 '+d.name;c.querySelector('.hotel-info-value').textContent=d.region||'';if(d.map)c.querySelector('.hotel-btn-map').href=d.map;
+c.appendChild(makeDelBtn(function(){lsRemove(LS.hotel,id);c.remove();hotelReinit()}));return c}
+function loadStoredItems(){
+lsLoad(LS.food).forEach(function(d){var sec=document.querySelector('#food-list .region-section[data-region="'+d.region+'"] .list-grid')||document.querySelector('#food-list .list-grid');sec.appendChild(buildFoodCard(d,d._id))});
+lsLoad(LS.cafe).forEach(function(d){var sec=document.querySelector('#cafe-list .region-section[data-region="'+d.region+'"] .list-grid')||document.querySelector('#cafe-list .list-grid');sec.appendChild(buildCafeCard(d,d._id))});
+lsLoad(LS.schedule).forEach(function(d){var tl=document.querySelector('#day'+(d.day||1)+' .timeline');if(tl)tl.appendChild(buildScheduleItem(d,d._id))});
+var hs=lsLoad(LS.hotel);if(hs.length){hs.forEach(function(d){document.getElementById('hotelTrack').appendChild(buildHotelCard(d,d._id))});hotelReinit()}}
+function submitSchedule(){var d={day:v('sf-day'),time:v('sf-time'),title:v('sf-title'),desc:v('sf-desc'),type:v('sf-type')};if(!d.title){alert('제목을 입력하세요');return}var id=lsAdd(LS.schedule,d);document.querySelector('#day'+d.day+' .timeline').appendChild(buildScheduleItem(d,id));closeModal('schedule');clear(['sf-time','sf-title','sf-desc'])}
+function submitFood(){var d={name:v('ff-name'),region:v('ff-region'),badge:v('ff-badge'),desc:v('ff-desc'),reco:v('ff-reco'),price:v('ff-price'),addr:v('ff-addr'),map:v('ff-map')};if(!d.name){alert('이름을 입력하세요');return}var id=lsAdd(LS.food,d);(document.querySelector('#food-list .region-section[data-region="'+d.region+'"] .list-grid')||document.querySelector('#food-list .list-grid')).appendChild(buildFoodCard(d,id));closeModal('food');clear(['ff-name','ff-desc','ff-reco','ff-price','ff-addr','ff-map'])}
+function submitCafe(){var d={name:v('cf-name'),region:v('cf-region'),badge:v('cf-badge'),desc:v('cf-desc'),reco:v('cf-reco'),price:v('cf-price'),addr:v('cf-addr'),map:v('cf-map')};if(!d.name){alert('이름을 입력하세요');return}var id=lsAdd(LS.cafe,d);(document.querySelector('#cafe-list .region-section[data-region="'+d.region+'"] .list-grid')||document.querySelector('#cafe-list .list-grid')).appendChild(buildCafeCard(d,id));closeModal('cafe');clear(['cf-name','cf-desc','cf-reco','cf-price','cf-addr','cf-map'])}
+function submitHotel(){var d={name:v('hf-name'),type:v('hf-type'),region:v('hf-region'),cin:v('hf-cin'),cout:v('hf-cout'),nights:v('hf-nights'),price:v('hf-price'),map:v('hf-map')};if(!d.name){alert('숙소명을 입력하세요');return}var id=lsAdd(LS.hotel,d);document.getElementById('hotelTrack').appendChild(buildHotelCard(d,id));hotelReinit();closeModal('hotel');clear(['hf-name','hf-region','hf-cin','hf-cout','hf-price','hf-map'])}
+function v(id){return (document.getElementById(id)||{}).value||''}
+function clear(ids){ids.forEach(function(i){var el=document.getElementById(i);if(el)el.value=''})}
+
+/* ===== Export / Import ===== */
+function exportData(){var data={_version:TRIP_CODE,_exported:new Date().toLocaleString('ko-KR'),food:lsLoad(LS.food),cafe:lsLoad(LS.cafe),schedule:lsLoad(LS.schedule),hotel:lsLoad(LS.hotel),expense:lsLoad(LS.expense)};var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='제주여행_데이터_'+TRIP_CODE+'.json';a.click()}
+function importData(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(d.food)lsSave(LS.food,d.food);if(d.cafe)lsSave(LS.cafe,d.cafe);if(d.schedule)lsSave(LS.schedule,d.schedule);if(d.hotel)lsSave(LS.hotel,d.hotel);if(d.expense)lsSave(LS.expense,d.expense);try{localStorage.setItem(TRIP_CODE+'_needpush','1')}catch(e){}location.reload()}catch(e){alert('불러오기 실패: 올바른 JSON 파일이 아닙니다')}};r.readAsText(f)}
+
+/* ===== 장소 세부정보 DB (네이버지도 기준 · ✔=확인됨 / 미표기=방문 전 확인 권장) ===== */
+var PLACE_DB={
+'다과상점':{cat:'카페 · 한과/다과',addr:'제주 제주시 애월읍 유수암로 51',tel:'064-799-0510',hours:'11:00 ~ 18:00 ✔',closed:'일요일 휴무 ✔',dog:'동반 여부 확인 필요',lat:33.4267,lng:126.3944},
+'새별오름':{cat:'오름 · 억새 명소',addr:'제주 제주시 애월읍 봉성리',hours:'상시 개방 (일출~일몰 권장)',dog:'목줄 필수 · 현장 안내판 확인',note:'10월 억새 절정 · 주차장 넓음',lat:33.3622,lng:126.3571},
+'소색채본':{cat:'감성 공간 · 카페',addr:'제주 서귀포시 안덕면 사계남로216번길 24-61',hours:'확인 필요',dog:'확인 필요',note:'산방산·사계해변 인접',lat:33.2337,lng:126.3096},
+'산양큰엉곶':{cat:'곶자왈 숲길',addr:'제주 제주시 한경면 연명로 179',hours:'09:30 ~ 18:00 (입장마감 17:00) ✔',price:'성인 8,000원 ✔',dog:'전 견종 가능 · 목줄+배변봉투 필수',note:'기찻길 포토존 · 숲길 3.5km',lat:33.3182,lng:126.2531},
+'신창풍차해안도로':{cat:'해안도로 · 일몰 명소',addr:'제주 제주시 한경면 신창리 1481-23',hours:'상시 개방',dog:'리드줄 착용',note:'10/7 일몰 18:14',lat:33.3444,lng:126.1766},
+'한림공원':{cat:'공원 · 식물원',addr:'제주 제주시 한림읍 한림로 300',hours:'09:00 ~ 18:00 ✔',price:'성인 15,000원 ✔',dog:'7kg 미만 · 보호자 1인당 1마리 · 리드줄',note:'10월 코스모스·핑크뮬리·국화',lat:33.3894,lng:126.2394},
+'호텔샌드':{cat:'카페 · 협재해변 앞',addr:'제주 제주시 한림읍 한림로 339 ✔',hours:'라스트오더 21:00 ✔',dog:'반려동물 동반 가능 ✔',note:'단체 이용·포장 가능 · @hotelsand_',lat:33.3937,lng:126.2417},
+'협재해수욕장':{cat:'해수욕장',addr:'제주 제주시 한림읍 협재리',hours:'상시 개방',dog:'목줄 산책 가능 (백사장 혼잡 시 주의)',note:'비양도 뷰 · 일몰 명소',lat:33.3941,lng:126.2401},
+'금능해수욕장':{cat:'해수욕장',addr:'제주 제주시 한림읍 금능리',hours:'상시 개방',dog:'목줄 산책 가능',note:'협재보다 한적 · 얕은 수심',lat:33.3903,lng:126.2355},
+'키친오즈':{cat:'양식 · 파스타',addr:'제주 제주시 한림읍 협재로 208',hours:'확인 필요',dog:'전 견종 동반 가능',lat:33.3940,lng:126.2460},
+'교래흑돼지':{cat:'흑돼지 구이',addr:'제주 제주시 조천읍 교래4길 73',tel:'064-784-6338',hours:'11:00 ~ 21:00 ✔',closed:'수요일 휴무 ✔ (10/9 금 정상영업)',dog:'동반 여부 전화 확인',note:'참숯 직화구이 · 주차 가능',lat:33.4342,lng:126.6683},
+'와흘메밀마을':{cat:'농촌체험 · 메밀꽃',addr:'제주 제주시 조천읍 남조로 2455',hours:'확인 필요 (개화 상태 문의)',dog:'확인 필요',note:'10월 가을 메밀꽃 시즌',lat:33.4776,lng:126.6252},
+'오선':{cat:'식당(집밥·두루치기)으로 확인됨 — 방문 전 확인',addr:'제주 제주시 조천읍 선흘동1길 31, 1층',hours:'확인 필요',dog:'확인 필요',note:'카페가 아닐 수 있음 — 커피는 인근 대체 가능',lat:33.4720,lng:126.7120},
+'서우봉':{cat:'둘레길 · 노을 명소',addr:'제주 제주시 조천읍 함덕리 260-8',hours:'상시 개방',dog:'전 견종 동반 가능 ✔',note:'함덕해변 연결 · 10/9 일몰 18:11',lat:33.5432,lng:126.6690},
+'한림농협 하나로마트':{cat:'마트 · 장보기',addr:'제주 제주시 한림읍 한림리',hours:'~20:00-21:00 내외 (방문 전 확인)',note:'협재 차 7분 · D1·D2 바비큐 장보기',lat:33.4145,lng:126.2622},
+'김녕농협 하나로마트':{cat:'마트 · 장보기',addr:'제주 제주시 구좌읍 김녕로 107',hours:'~20:00-21:00 내외 (방문 전 확인)',note:'함덕→월정 동선 정중앙 · D3 장보기 (대안: 세화 구좌농협점)',lat:33.5575,lng:126.7465},
+'오저여':{cat:'일출 명소 · 해안',addr:'제주 제주시 구좌읍 행원리 해안',hours:'상시 (10/10 일출 06:33)',dog:'목줄 산책 가능',note:'쉬엉갑서예에서 차 5분',lat:33.5539,lng:126.8215},
+'세화민속오일시장':{cat:'전통시장 (오일장)',addr:'제주 제주시 구좌읍 세화리 1500-44',hours:'장날: 끝자리 5·0일 오전~오후 ✔ (10/10 장날)',dog:'혼잡 시 안고 이동 권장',note:'세화해변 바로 옆 · 오전 방문 추천',lat:33.5251,lng:126.8608},
+'평대스낵':{cat:'분식',addr:'제주 제주시 구좌읍 대수길 26',hours:'11:30 ~ 16:00 (연중무휴) ✔',dog:'포장 추천',note:'떡볶이·한치튀김',lat:33.5380,lng:126.8430},
+'안도르':{cat:'카페 · 베이커리',addr:'제주 제주시 구좌읍 비자림로 1647, 1층',tel:'0507-1468-5536',hours:'10:00 ~ 20:00 ✔',dog:'애견동반 가능',note:'오름뷰 숲속 카페 (송당)',lat:33.4589,lng:126.7885},
+'맛나식당':{cat:'갈치·고등어조림',addr:'제주 서귀포시 성산읍 동류암로 41',tel:'064-782-4771',hours:'08:30 ~ 14:30 ✔ · 재료소진 조기마감',closed:'수·일요일 휴무 ✔ (10/10 토 정상영업)',dog:'동반 불가 가능성 — 교대 식사 권장',note:'웨이팅 김 — 12:30 전 도착 권장',lat:33.4506,lng:126.9180},
+'시비거리':{cat:'해안 산책로 · 시비',addr:'제주 서귀포시 성산읍 성산리 305-1',hours:'상시 개방',dog:'목줄 산책 가능',note:'우도 조망 · 시인 이생진 시비',lat:33.4740,lng:126.9330},
+'목화휴게소':{cat:'반건조 오징어 구이',addr:'제주 서귀포시 성산읍 해맞이해안로 2526 (시흥리)',hours:'11:30 ~ 18:00 ✔',closed:'수요일 휴무 ✔ (10/10 토 정상영업)',dog:'야외 취식 가능',note:'올레1코스 바닷가 · 맥반석 오징어',lat:33.4770,lng:126.9200},
+'돌담채':{cat:'독채 펜션 (예약 확정)',addr:'제주 제주시 한림읍 협재2길 17-1',hours:'체크인 15:00 / 체크아웃 11:00 (확인)',price:'₩152,000 (2박) ✔',dog:'2마리 동반 조건 확인',lat:33.3940,lng:126.2434},
+'쉬엉갑서예':{cat:'독채 펜션 (예약 확정)',addr:'제주 제주시 구좌읍 월정1길 17',hours:'체크인 15:00 / 체크아웃 11:00 (확인)',price:'₩120,000 (기본 8만 + 애견 2만×2) ✔',dog:'2마리 동반 확정',lat:33.5561,lng:126.7957},
+'카페호나':{cat:'카페 · 브런치',addr:'제주 제주시 애월읍 하소로 557-10',hours:'확인 필요',dog:'전 견종 동반 가능',lat:33.4600,lng:126.3600},
+'카페모알보알':{cat:'오션뷰 카페',addr:'제주 제주시 구좌읍 구좌해안로 141',hours:'확인 필요',dog:'확인 필요',note:'보라카이 감성 (김녕)',lat:33.5570,lng:126.7550}
+};
+function tmapUrl(k){var p=PLACE_DB[k];return 'tmap://route?goalname='+encodeURIComponent(k)+'&goalx='+p.lng+'&goaly='+p.lat}
+function naverUrl(k){return 'https://map.naver.com/p/search/'+encodeURIComponent((PLACE_DB[k].nq||('제주 '+k)))}
+function showPlace(k){var p=PLACE_DB[k];if(!p)return;
+document.getElementById('pm-title').textContent='📍 '+k;
+var h='<span class="pd-cat">'+p.cat+'</span>';
+h+='<div class="pd-row"><span class="pd-ico">📍</span><span class="pd-val">'+p.addr+'</span></div>';
+if(p.hours)h+='<div class="pd-row"><span class="pd-ico">🕒</span><span class="pd-val">'+p.hours+(p.closed?'<div class="pd-sub">'+p.closed+'</div>':'')+'</span></div>';
+if(p.tel)h+='<div class="pd-row"><span class="pd-ico">📞</span><span class="pd-val"><a href="tel:'+p.tel+'">'+p.tel+'</a></span></div>';
+if(p.price)h+='<div class="pd-row"><span class="pd-ico">💵</span><span class="pd-val">'+p.price+'</span></div>';
+if(p.dog)h+='<div class="pd-row"><span class="pd-ico">🐕</span><span class="pd-val">'+p.dog+'</span></div>';
+if(p.note)h+='<div class="pd-row"><span class="pd-ico">💡</span><span class="pd-val">'+p.note+'</span></div>';
+h+='<div class="pd-btns"><a class="pd-btn pd-btn-naver" href="'+naverUrl(k)+'" target="_blank">네이버지도</a><a class="pd-btn pd-btn-tmap" href="'+tmapUrl(k)+'" title="모바일에서 티맵 설치 시 바로 길안내">🚘 티맵 안내</a></div>';
+h+='<p style="font-size:11px;color:var(--text-secondary);margin-top:10px">✔ 표시는 조사로 확인된 정보 · 그 외는 방문 전 네이버지도/전화로 재확인 권장</p>';
+document.getElementById('pm-body').innerHTML=h;
+document.getElementById('modal-place').classList.add('open');document.body.style.overflow='hidden'}
+function closePlaceModal(){document.getElementById('modal-place').classList.remove('open');document.body.style.overflow=''}
+function decoratePlaces(){var keys=Object.keys(PLACE_DB);
+document.querySelectorAll('.tl-card').forEach(function(card){var t=card.querySelector('.tl-title');if(!t)return;
+keys.some(function(k){if(t.textContent.indexOf(k)>-1){
+var ml=card.querySelector('.tl-tags .map-link');if(ml)ml.remove();
+var act=document.createElement('div');act.className='tl-actions';act.appendChild(mkDetailBtn(k));act.appendChild(mkTmapBtn(k));card.appendChild(act);return true}return false})});
+document.querySelectorAll('.list-card').forEach(function(card){var t=card.querySelector('h3');var meta=card.querySelector('.list-meta');if(!t||!meta)return;
+keys.some(function(k){if(t.textContent.indexOf(k)>-1||k.indexOf(t.textContent.trim())>-1){
+var ml=meta.querySelector('.map-link');if(ml)ml.remove();
+meta.appendChild(mkDetailBtn(k));meta.appendChild(mkTmapBtn(k));return true}return false})})}
+
+/* ===== 일자별 숙소 카드 & 사용경비 ===== */
+var DAY_HOTEL={
+1:{name:'돌담채',sub:'협재 (한림읍) · 협재2길 17-1',night:'1박째 / 총 2박',price:'₩76,000/박',key:'돌담채'},
+2:{name:'돌담채',sub:'협재 (한림읍) · 협재2길 17-1',night:'2박째 / 총 2박',price:'₩76,000/박',key:'돌담채'},
+3:{name:'쉬엉갑서예',sub:'월정리 (구좌읍) · 월정1길 17',night:'1박째 / 총 1박',price:'₩120,000/박 · 애견비 포함',key:'쉬엉갑서예'},
+4:null};
+var DAY_BUDGET={1:150000,2:120000,3:150000,4:120000};
+function initDayExtras(){for(var n=1;n<=4;n++){(function(n){
+var dc=document.getElementById('day'+n);if(!dc)return;
+var hd=dc.querySelector('.day-header');
+var hc=document.createElement('div');hc.className='day-hotel-card';
+var h=DAY_HOTEL[n];
+if(h){hc.innerHTML='<span style="font-size:18px">🏨</span><div><div class="dh-name">'+h.name+'</div><div class="dh-sub">'+h.sub+'</div></div><span class="dh-chip type">독채</span><span class="dh-chip night">'+h.night+'</span><span class="dh-chip price">'+h.price+'</span><div class="dh-right"></div>';
+var r=hc.querySelector('.dh-right');r.appendChild(mkDetailBtn(h.key));r.appendChild(mkTmapBtn(h.key));}
+else{hc.innerHTML='<span style="font-size:18px">✈️</span><div><div class="dh-name">귀가 — 숙박 없음</div><div class="dh-sub">LJ510 제주 21:10 → 김포 22:25 · 렌트카 반납 후 탑승</div></div>';}
+hd.parentNode.insertBefore(hc,hd.nextSibling);
+var box=document.createElement('div');box.className='exp-box';box.id='exp-box-'+n;dc.appendChild(box);renderExpenses(n);
+})(n)}}
+function renderExpenses(n){var box=document.getElementById('exp-box-'+n);if(!box)return;
+var items=lsLoad(LS.expense).filter(function(e){return String(e.day)===String(n)});
+var total=items.reduce(function(s,e){return s+(Number(e.amt)||0)},0);
+var budget=DAY_BUDGET[n]||0;var pct=budget?Math.min(100,Math.round(total/budget*100)):0;
+var cls=total>budget?'over':(total>budget*0.8?'warn':'');
+var h='<div class="exp-head"><b>💸 사용경비</b><span>예상 <b>₩'+budget.toLocaleString()+'</b> · 실제 <b style="color:'+(total>budget?'var(--negative)':'var(--positive)')+'">₩'+total.toLocaleString()+'</b> ('+items.length+'건'+(budget?' · '+Math.round(total/budget*100)+'%':'')+')</span></div>';
+h+='<div class="exp-bar-track"><div class="exp-bar-fill '+cls+'" style="width:'+pct+'%"></div></div>';
+box.innerHTML=h;
+if(!items.length){var e=document.createElement('div');e.className='exp-empty';e.textContent='아직 입력된 경비가 없어요 — 상단 [+ 💸 사용경비]로 추가';box.appendChild(e)}
+items.forEach(function(it){var row=document.createElement('div');row.className='exp-row';
+row.innerHTML='<span><span class="exp-cat">'+(it.cat||'기타')+'</span> '+it.title+'</span><span><b>₩'+Number(it.amt).toLocaleString()+'</b></span>';
+var del=document.createElement('button');del.className='exp-del';del.textContent='✕';
+del.onclick=function(){showConfirm(function(){lsRemove(LS.expense,it._id);renderExpenses(n);renderSpend()})};
+row.lastElementChild.appendChild(del);box.appendChild(row)})}
+function submitExpense(){var d={day:v('ef-day'),cat:v('ef-cat'),title:v('ef-title'),amt:v('ef-amt')};
+if(!d.title||!d.amt){alert('항목명과 금액을 입력하세요');return}
+lsAdd(LS.expense,d);if(d.day!=='pre')renderExpenses(Number(d.day));renderSpend();closeModal('expense');clear(['ef-title','ef-amt'])}
+
+/* ===== 사용경비 종합 탭 ===== */
+var SP_CAT_COLOR={'항공':'#3b82f6','숙박':'#ec4899','식비':'#fb923c','카페·간식':'#a78bfa','입장료':'#34d399','교통·주유':'#22d3ee','장보기':'#f59e0b','기타':'#94a3b8'};
+var SP_TOTAL_BUDGET=859800+150000+120000+150000+120000; /* 사전결제 확정 + DAY 예산 합 */
+var spFilterDay='all',spFilterCat='all';
+function seedPrepaid(){if(localStorage.getItem(TRIP_CODE+'_seeded'))return;
+[{day:'pre',cat:'항공',title:'진에어 왕복 (LJ501/LJ510)',amt:'367800'},
+ {day:'pre',cat:'숙박',title:'돌담채 2박 (10/7~9)',amt:'152000'},
+ {day:'pre',cat:'숙박',title:'쉬엉갑서예 1박 (애견비 포함)',amt:'120000'},
+ {day:'pre',cat:'교통·주유',title:'렌트카 4일 (예상가)',amt:'220000'}].forEach(function(d){lsAdd(LS.expense,d)});
+try{localStorage.setItem(TRIP_CODE+'_seeded','1')}catch(e){}}
+function spDayLabel(d){return d==='pre'?'💳 사전결제':'DAY '+d}
+function renderSpend(){var box=document.getElementById('panel-spend');if(!box)return;
+var all=lsLoad(LS.expense);
+var total=all.reduce(function(s,e){return s+(Number(e.amt)||0)},0);
+var pre=all.filter(function(e){return e.day==='pre'}).reduce(function(s,e){return s+(Number(e.amt)||0)},0);
+var onsite=total-pre;var rate=SP_TOTAL_BUDGET?Math.round(total/SP_TOTAL_BUDGET*100):0;
+/* KPI */
+var k='<div class="kpi-card"><span class="kpi-icon">💸</span><span class="kpi-label">총 사용액</span><span class="kpi-value">₩'+total.toLocaleString()+'</span><span class="kpi-sub">사전결제 ₩'+pre.toLocaleString()+' 포함</span></div>';
+k+='<div class="kpi-card"><span class="kpi-icon">🧾</span><span class="kpi-label">현장 사용액</span><span class="kpi-value">₩'+onsite.toLocaleString()+'</span><span class="kpi-sub">사전결제 제외</span></div>';
+k+='<div class="kpi-card"><span class="kpi-icon">📊</span><span class="kpi-label">예산 대비 사용률</span><span class="kpi-value" style="color:'+(rate>100?'var(--negative)':'var(--positive)')+'">'+rate+'%</span><div class="exp-bar-track" style="margin:6px 0 0"><div class="exp-bar-fill '+(rate>100?'over':(rate>80?'warn':''))+'" style="width:'+Math.min(100,rate)+'%"></div></div><span class="kpi-sub">전체 예산 ₩'+SP_TOTAL_BUDGET.toLocaleString()+'</span></div>';
+document.getElementById('sp-kpis').innerHTML=k;
+/* 도넛 */
+var byCat={};all.forEach(function(e){var c=e.cat||'기타';byCat[c]=(byCat[c]||0)+(Number(e.amt)||0)});
+var cats=Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a]});
+var donut=document.getElementById('sp-donut'),legend=document.getElementById('sp-legend');
+if(total>0){var acc=0,stops=[];cats.forEach(function(c){var pctv=byCat[c]/total*100;stops.push((SP_CAT_COLOR[c]||'#94a3b8')+' '+acc+'% '+(acc+pctv)+'%');acc+=pctv});
+donut.style.background='conic-gradient('+stops.join(',')+')';
+legend.innerHTML=cats.map(function(c){return '<span><span class="sw" style="background:'+(SP_CAT_COLOR[c]||'#94a3b8')+'"></span>'+c+' <b>₩'+byCat[c].toLocaleString()+'</b> ('+Math.round(byCat[c]/total*100)+'%)</span>'}).join('')}
+else{donut.style.background='var(--surface-hover)';legend.innerHTML='<span class="exp-empty">입력된 경비가 없어요</span>'}
+/* DAY별 바 */
+var bars='';for(var n=1;n<=4;n++){var act=all.filter(function(e){return String(e.day)===String(n)}).reduce(function(s,e){return s+(Number(e.amt)||0)},0);
+var bud=DAY_BUDGET[n]||0;var maxv=Math.max(bud,act,1);
+bars+='<div class="sp-bar-row"><div class="sp-bar-label"><span>DAY '+n+' (10/'+(6+n)+')</span><span>예산 ₩'+bud.toLocaleString()+' · 실사용 <b style="color:'+(act>bud?'var(--negative)':'var(--text)')+'">₩'+act.toLocaleString()+'</b></span></div>'
++'<div class="sp-track"><div class="sp-fill-budget" style="width:'+Math.round(bud/maxv*100)+'%"></div></div>'
++'<div class="sp-track"><div class="sp-fill-actual'+(act>bud?' over':'')+'" style="width:'+Math.round(act/maxv*100)+'%"></div></div></div>'}
+document.getElementById('sp-bars').innerHTML=bars;
+/* 필터 */
+var dayKeys=['all','pre','1','2','3','4'],dayLabels={all:'전체',pre:'💳 사전결제','1':'DAY 1 (10/7)','2':'DAY 2 (10/8)','3':'DAY 3 (10/9)','4':'DAY 4 (10/10)'};
+document.getElementById('sp-dayfilters').innerHTML=dayKeys.map(function(d){return '<button class="region-btn'+(spFilterDay===d?' active':'')+'" onclick="spFilterDay=\''+d+'\';renderSpend()">'+dayLabels[d]+'</button>'}).join('');
+var catKeys=['all'].concat(Object.keys(SP_CAT_COLOR));
+document.getElementById('sp-catfilters').innerHTML=catKeys.map(function(c){return '<button class="region-btn'+(spFilterCat===c?' active':'')+'" onclick="spFilterCat=\''+c+'\';renderSpend()">'+(c==='all'?'전체':c)+'</button>'}).join('');
+/* 테이블 */
+var rows=all.filter(function(e){return (spFilterDay==='all'||String(e.day)===spFilterDay)&&(spFilterCat==='all'||(e.cat||'기타')===spFilterCat)});
+var tb=document.getElementById('sp-tbody');tb.innerHTML='';
+if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="exp-empty">해당 조건의 내역이 없어요</td></tr>'}
+rows.forEach(function(it){var tr=document.createElement('tr');
+tr.innerHTML='<td><span class="'+(it.day==='pre'?'sp-pre-badge':'sp-day-badge')+'">'+spDayLabel(it.day)+'</span></td><td><span class="sw" style="display:inline-block;width:9px;height:9px;border-radius:3px;background:'+(SP_CAT_COLOR[it.cat]||'#94a3b8')+';margin-right:6px"></span>'+(it.cat||'기타')+'</td><td><b>₩'+Number(it.amt).toLocaleString()+'</b></td><td></td><td></td>';
+tr.children[3].textContent=it.title;
+var del=document.createElement('button');del.className='exp-del';del.textContent='삭제';
+del.onclick=function(){showConfirm(function(){lsRemove(LS.expense,it._id);renderSpend();if(it.day!=='pre')renderExpenses(Number(it.day))})};
+tr.children[4].appendChild(del);tb.appendChild(tr)})}
+function mkDetailBtn(k){var b=document.createElement('button');b.className='detail-link';b.textContent='ℹ️ 상세';b.onclick=function(e){e.stopPropagation();showPlace(k)};return b}
+function mkTmapBtn(k){var a=document.createElement('a');a.className='tmap-link';a.textContent='🚘 티맵';a.href=tmapUrl(k);a.title='모바일에서 티맵 설치 시 바로 길안내';return a}
+
+/* ===== FIREBASE SYNC (dashboards/jeju2026 · schema v2) ===== */
+var _syncTimer=null;
+var _lastFbTs=Number(localStorage.getItem(TRIP_CODE+'_fbts')||0);
+function setSyncStatus(state,text){var dot=document.getElementById('syncDot'),label=document.getElementById('syncLabel');if(!dot||!label)return;
+var colors={ok:'var(--positive)',syncing:'#f59e0b',error:'var(--negative)',offline:'#6b7280'};dot.style.background=colors[state]||colors.ok;label.textContent=text}
+function showSyncToast(msg){var t=document.getElementById('syncToast');if(!t)return;t.textContent=msg;t.style.transform='translateX(-50%) translateY(0)';setTimeout(function(){t.style.transform='translateX(-50%) translateY(80px)'},2500)}
+function fbExpensesV2(){var CM={'항공':'flight','숙박':'hotel','교통·주유':'transport','식비':'meal','카페·간식':'cafe','입장료':'activity','장보기':'etc','기타':'etc'};
+var DM={'1':'2026-10-07','2':'2026-10-08','3':'2026-10-09','4':'2026-10-10'};
+return lsLoad(LS.expense).map(function(e){return{amount:Number(e.amt)||0,currency:'KRW',exchangeRate:1,exchangeRateDate:'',category:CM[e.cat]||'etc',date:DM[e.day]||'',day:e.day==='pre'?0:Number(e.day),desc:e.title||'',place:e.title||'',link:'',prepaid:e.day==='pre'}})}
+function scheduleSyncToFirebase(){if(!fbDB)return;setSyncStatus('syncing','☁️ 동기화 중...');clearTimeout(_syncTimer);_syncTimer=setTimeout(pushToFirebase,3000)}
+function pushToFirebase(){if(!fbDB)return;
+var payload={expenses:fbExpensesV2(),localExpense:lsLoad(LS.expense),food:lsLoad(LS.food),cafe:lsLoad(LS.cafe),schedule:lsLoad(LS.schedule),hotel:lsLoad(LS.hotel),_ts:Date.now(),_version:TRIP_CODE};
+_lastFbTs=payload._ts;try{localStorage.setItem(TRIP_CODE+'_fbts',String(payload._ts))}catch(e){}
+setSyncStatus('syncing','☁️ 저장 중...');
+fbDB.ref(FB_REF).set(payload).then(function(){setSyncStatus('ok','☁️ 최신');showSyncToast('☁️ 클라우드에 저장되었습니다')})
+.catch(function(err){setSyncStatus('error','⚠️ 오류');showSyncToast('동기화 오류: '+err.message);console.error('Firebase push error:',err)})}
+function startFirebaseListener(){if(!fbDB){setSyncStatus('offline','📵 오프라인');return}
+setSyncStatus('syncing','☁️ 연결 중...');
+fbDB.ref(FB_REF).on('value',function(snap){var r=snap.val();
+if(!r||!r._ts){setSyncStatus('ok','☁️ 최신');return}
+if(r._ts>_lastFbTs){
+try{if(r.localExpense)localStorage.setItem(LS.expense,JSON.stringify(r.localExpense));
+if(r.food)localStorage.setItem(LS.food,JSON.stringify(r.food));
+if(r.cafe)localStorage.setItem(LS.cafe,JSON.stringify(r.cafe));
+if(r.schedule)localStorage.setItem(LS.schedule,JSON.stringify(r.schedule));
+if(r.hotel)localStorage.setItem(LS.hotel,JSON.stringify(r.hotel));
+localStorage.setItem(TRIP_CODE+'_fbts',String(r._ts));localStorage.setItem(TRIP_CODE+'_seeded','1')}catch(e){}
+location.reload()}
+else setSyncStatus('ok','☁️ 최신')},
+function(err){setSyncStatus('error','⚠️ 연결 오류');console.error('Firebase listener error:',err)})}
+window.addEventListener('online',function(){setSyncStatus('syncing','☁️ 재연결...');startFirebaseListener()});
+window.addEventListener('offline',function(){setSyncStatus('offline','📵 오프라인')});
+
+document.addEventListener('DOMContentLoaded',function(){seedPrepaid();initMaps();initCrudBars();decoratePlaces();initDayExtras();renderSpend();startFirebaseListener();
+if(localStorage.getItem(TRIP_CODE+'_needpush')){localStorage.removeItem(TRIP_CODE+'_needpush');scheduleSyncToFirebase()}});
+</script>
+</body>
+</html>
