@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>제주 반려견 동반 여행 대시보드 · 2026.10.07~10.10</title>
+<!-- v1.2 (2026.08.30) : 렌트카 확정 반영 — 카모아 캐스퍼 193,384원(완전자차)·제주카카렌트카 본사·셔틀·반려동물 규정(7kg·케이지·마리당 1만원), 예산·KPI·정보탭·사전결제 갱신(마이그레이션 포함) -->
 <!-- v1.1 (2026.08.29) : 히어로 정리 — 부제의 렌트카·반려견 문구 및 확정판 리본 삭제 -->
 <!-- v1 (2026.08.29) : 확정판 — A안(협재 돌담채 2박 + 월정리 쉬엉갑서예 1박) · Firebase 동기화(dashboards/jeju2026, schema v2) · 표준 아이콘 연결 -->
 <!-- 시안 v4 (2026.08.29) : 사용경비 종합 탭(도넛·DAY별 차트·필터·사전결제 자동등록) -->
@@ -307,7 +308,7 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
     <div class="kpi-card animate delay-1"><span class="kpi-icon">🗓️</span><span class="kpi-label">여행 기간</span><span class="kpi-value">3박 4일</span><span class="kpi-sub">10/7 07:30 도착 · 10/10 21:10 출발</span></div>
     <div class="kpi-card animate delay-2"><span class="kpi-icon">✈️</span><span class="kpi-label">항공편</span><span class="kpi-value">LJ501 / LJ510</span><span class="kpi-sub">GMP↔CJU · 좌석 33B/45B</span></div>
     <div class="kpi-card animate delay-3"><span class="kpi-icon">🏠</span><span class="kpi-label">숙소 (예약 확정)</span><span class="kpi-value">₩272,000</span><span class="kpi-sub">돌담채 15.2만(2박) + 쉬엉갑서예 12만(1박)</span></div>
-    <div class="kpi-card animate delay-4"><span class="kpi-icon">💰</span><span class="kpi-label">확정 경비</span><span class="kpi-value">₩859,800</span><span class="kpi-sub">항공 36.8만 + 숙소 27.2만 + 렌트카 22만</span></div>
+    <div class="kpi-card animate delay-4"><span class="kpi-icon">💰</span><span class="kpi-label">확정 경비 (결제완료)</span><span class="kpi-value">₩833,184</span><span class="kpi-sub">항공 36.8만 + 숙소 27.2만 + 렌트카 19.3만</span></div>
   </div>
 
   <div class="main-tabs" role="tablist">
@@ -337,7 +338,7 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
       <p class="map-caption">번호 순서 = 이동 동선 · 마커 클릭 시 장소명 표시</p>
       <div class="timeline">
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">06:15 → 07:30</div><div class="tl-title">✈️ LJ501 김포 → 제주</div><div class="tl-desc">좌석 33B · 반려견 기내동반 체크인은 여유있게 (수하물 15kg)</div><div class="tl-tags"><span class="tag tag-flight">항공</span></div></div></div>
-        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">07:30 ~ 08:30</div><div class="tl-title">🚗 렌트카 수령</div><div class="tl-desc">공항 렌터카하우스 → 셔틀 이동 포함 여유 1시간</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">07:30 ~ 08:30</div><div class="tl-title">🚗 캐스퍼 렌트카 수령 (제주카카렌트카)</div><div class="tl-desc">공항 1층 5번 게이트 렌트카하우스 1구역 1번에서 셔틀 탑승(30분 간격·7분 소요) → 본사(용문로 20) · <b>대여시작 08:00</b> · 예약 GM2321964 · 강아지 케이지 지참 필수</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">09:00 ~ 10:30</div><div class="tl-title">⛰️ 새별오름</div><div class="tl-desc">10월 억새 절정. 목줄 필수, 동반 가능 여부 현장 안내판 확인</div><div class="tl-tags"><span class="tag tag-spot">관광</span><span class="tag tag-dog">🐕 목줄</span><a class="map-link" href="https://map.naver.com/p/search/새별오름" target="_blank">지도</a></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">11:00 ~ 11:45</div><div class="tl-title">🍵 다과상점</div><div class="tl-desc">애월 유수암 한과·다과 상점 · <b>11:00 오픈</b>이라 새별오름 다음 순서로 배치 (일요일 휴무 — 수요일 OK)</div><div class="tl-tags"><span class="tag tag-cafe">카페</span><a class="map-link" href="https://map.naver.com/p/search/제주 다과상점 유수암" target="_blank">지도</a></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day1)"></div><div class="tl-card"><div class="tl-time">12:30 ~ 13:30</div><div class="tl-title">🍚 점심 — 사계·안덕 일대 (미정)</div><div class="tl-desc">사계해변 근처 식당. 야외석 있는 곳 추천</div><div class="tl-tags"><span class="tag tag-food">맛집</span></div></div></div>
@@ -397,7 +398,7 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">12:30 ~ 13:40</div><div class="tl-title">🐟 맛나식당 (점심)</div><div class="tl-desc">성산 갈치·고등어조림 · <b>영업 08:30~14:30 · 재료 소진 시 조기마감</b> — 웨이팅 감안 12:30 전 도착 권장 · 동반 불가 시 교대 식사</div><div class="tl-tags"><span class="tag tag-food">맛집</span><a class="map-link" href="https://map.naver.com/p/search/맛나식당 성산" target="_blank">지도</a></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">14:00 ~ 14:50</div><div class="tl-title">📜 시인 이생진 시비거리</div><div class="tl-desc">성산리 해안 · 우도 조망 산책로</div><div class="tl-tags"><span class="tag tag-spot">관광</span><a class="map-link" href="https://map.naver.com/p/search/이생진 시비거리" target="_blank">지도</a></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">15:00 ~ 16:00</div><div class="tl-title">🦑 목화휴게소</div><div class="tl-desc">시흥리 올레1코스 바닷가 · 반건조 오징어 구이 · 11:30~18:00 (공항 가는 방향 길목)</div><div class="tl-tags"><span class="tag tag-cafe">간식</span><a class="map-link" href="https://map.naver.com/p/search/목화휴게소" target="_blank">지도</a></div><div class="nearby-box"><div class="nearby-title">📍 여유 시간이 있으면</div><div class="nearby-list">광치기해변 · 섭지코지 해안 산책</div></div></div></div>
-        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">17:30 → 19:00</div><div class="tl-title">🚗 공항 이동 · 렌트카 반납</div><div class="tl-desc">성산 → 공항 약 1시간 + 반납·셔틀 여유</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">17:30 → 19:00</div><div class="tl-title">🚗 공항 이동 · 렌트카 반납</div><div class="tl-desc">성산 → 본사(용문로 20) 약 1시간 · 반납 전 주유(휘발유) · <b>반납 마감 20:00</b> · 셔틀로 공항 이동(7분)</div><div class="tl-tags"><span class="tag tag-transport">이동</span></div></div></div>
         <div class="tl-item"><div class="tl-dot" style="border-color:var(--day4)"></div><div class="tl-card"><div class="tl-time">21:10 → 22:25</div><div class="tl-title">✈️ LJ510 제주 → 김포</div><div class="tl-desc">좌석 45B · 반려견 기내동반 체크인 여유있게</div><div class="tl-tags"><span class="tag tag-flight">항공</span></div></div></div>
       </div>
     </div>
@@ -528,10 +529,10 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
       <div class="budget-grid">
         <div class="budget-card"><h3>✈️ 항공 ✅</h3><div class="budget-row"><span class="label">LJ501/LJ510 왕복 (발권 완료)</span><span class="amount">₩367,800</span></div><div class="budget-row"><span class="label">반려견 기내동반 2마리 🔮</span><span class="amount">항공사 요금 확인</span></div><div class="budget-total"><span>소계</span><span>₩367,800+α</span></div></div>
         <div class="budget-card"><h3>🏠 숙소 ✅</h3><div class="budget-row"><span class="label">돌담채 2박 (10/7~9)</span><span class="amount">₩152,000</span></div><div class="budget-row"><span class="label">쉬엉갑서예 1박 (기본 8만)</span><span class="amount">₩80,000</span></div><div class="budget-row"><span class="label">└ 애견동반비 2만 × 2마리</span><span class="amount">₩40,000</span></div><div class="budget-total"><span>소계</span><span>₩272,000</span></div></div>
-        <div class="budget-card"><h3>🚗 렌트카·유류</h3><div class="budget-row"><span class="label">렌트카 4일 ✅ (예상가)</span><span class="amount">₩220,000</span></div><div class="budget-row"><span class="label">유류비 (약 300km) 🔮</span><span class="amount">~₩50,000</span></div><div class="budget-total"><span>소계</span><span>~₩270,000</span></div></div>
+        <div class="budget-card"><h3>🚗 렌트카·유류 ✅</h3><div class="budget-row"><span class="label">캐스퍼 3일 12시간 (카모아·완전자차 포함, 결제완료)</span><span class="amount">₩193,384</span></div><div class="budget-row"><span class="label">└ 원가 198,384 − 쿠폰 5,000</span><span class="amount"></span></div><div class="budget-row"><span class="label">반려동물 동반비 1만×2마리 (현장 결제)</span><span class="amount">₩20,000</span></div><div class="budget-row"><span class="label">유류비 (휘발유·약 300km) 🔮</span><span class="amount">~₩50,000</span></div><div class="budget-total"><span>소계</span><span>~₩263,384</span></div></div>
         <div class="budget-card"><h3>🍜 식비·기타 🔮</h3><div class="budget-row"><span class="label">식비 (2인 × 4일)</span><span class="amount">~₩300,000</span></div><div class="budget-row"><span class="label">입장료 (한림공원 1.5만×2 · 산양큰엉곶 8천×2 등)</span><span class="amount">~₩60,000</span></div><div class="budget-row"><span class="label">바비큐·마트 장보기 2회</span><span class="amount">~₩100,000</span></div><div class="budget-total"><span>소계</span><span>~₩460,000</span></div></div>
       </div>
-      <p class="budget-note">※ 확정분 합계 ₩859,800 (항공 367,800 + 숙소 272,000 + 렌트카 220,000) · 추정 포함 총계 약 <b>₩137만</b> (반려견 기내요금 별도)</p>
+      <p class="budget-note">※ 확정분 합계 ₩833,184 (항공 367,800 + 숙소 272,000 + 렌트카 193,384 — 모두 결제완료) · 추정 포함 총계 약 <b>₩136만</b> (반려견 기내요금 별도)</p>
     </div>
   </div>
 
@@ -568,6 +569,14 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
           <li>새별오름: 목줄 필수, 현장 안내 확인</li>
           <li>기내 동반: 항공사 사전예약 필수 (케이지 포함 무게 제한)</li>
           <li>공통: 목줄 + 배변봉투 + 인식표</li></ul></div>
+        <div class="info-card"><h3>🚗 렌트카 (예약 확정 · 카모아)</h3><ul>
+          <li>차량: <span class="highlight">캐스퍼</span> (2022년식 · 휘발유 · 4인승 · 오토) — 예약번호 GM2321964</li>
+          <li>기간: 10/7(수) 08:00 ~ 10/10(토) 20:00 (3일 12시간) · 결제 ₩193,384 (완전자차 포함)</li>
+          <li>업체: 제주카카렌트카 본사 — 제주시 용문로 20 · ☎ 1566-0880 · 영업 08:00~20:00</li>
+          <li>셔틀: 공항 1층 5번 게이트 렌트카하우스 1구역 1번 · 30분 간격 · 7분 소요 (운행 08:00~20:00)</li>
+          <li>보험: 완전자차 자기부담 <b>0원</b> (단독사고·휠/타이어 보장불가, 휴차보상료 보장) · 종합보험 대인 무한/대물 2천만/자손 1,500만 (자기부담 각 50만)</li>
+          <li>🐕 반려동물: <span class="highlight">7kg 미만 · 케이지 지참 필수 · 마리당 1만원 현장 결제</span> (2마리 = 2만원)</li>
+          <li>무료취소: 10/4(일) 08:00까지 · 제1·2운전자 등록 완료</li></ul></div>
         <div class="info-card"><h3>🛒 하나로마트 (바비큐 장보기)</h3><ul>
           <li><b>한림농협점</b> — 한림리, 협재 차 7분 (D1·D2)</li>
           <li><b>김녕농협점</b> — 김녕로 107, 함덕→월정 동선 (D3)</li>
@@ -649,7 +658,7 @@ footer{text-align:center;padding:40px 0 60px;color:var(--text-secondary);font-si
 <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">☁️ 연결 중...</span></div>
 <div class="sync-toast" id="syncToast"></div>
 
-<footer>🐕 제주 반려견 동반 여행 대시보드 · <b>v1 확정판</b> · 2026.08.29 · A안(협재 돌담채 2박 + 월정리 쉬엉갑서예 1박) · 확정경비 ₩859,800<br>일출·일몰: 천문 계산값 · 장소 정보: 네이버지도 기준 조사(✔) · 지도 좌표: 근사치(확정 시 보정) · 동반 규정은 방문 전 재확인</footer>
+<footer>🐕 제주 반려견 동반 여행 대시보드 · <b>v1.2</b> · 2026.08.30 · A안(협재 돌담채 2박 + 월정리 쉬엉갑서예 1박) · 확정경비 ₩833,184 (전액 결제완료)<br>일출·일몰: 천문 계산값 · 장소 정보: 네이버지도 기준 조사(✔) · 지도 좌표: 근사치(확정 시 보정) · 동반 규정은 방문 전 재확인</footer>
 
 <script>
 /* ===== 상수 ===== */
@@ -789,7 +798,8 @@ var PLACE_DB={
 '돌담채':{cat:'독채 펜션 (예약 확정)',addr:'제주 제주시 한림읍 협재2길 17-1',hours:'체크인 15:00 / 체크아웃 11:00 (확인)',price:'₩152,000 (2박) ✔',dog:'2마리 동반 조건 확인',lat:33.3940,lng:126.2434},
 '쉬엉갑서예':{cat:'독채 펜션 (예약 확정)',addr:'제주 제주시 구좌읍 월정1길 17',hours:'체크인 15:00 / 체크아웃 11:00 (확인)',price:'₩120,000 (기본 8만 + 애견 2만×2) ✔',dog:'2마리 동반 확정',lat:33.5561,lng:126.7957},
 '카페호나':{cat:'카페 · 브런치',addr:'제주 제주시 애월읍 하소로 557-10',hours:'확인 필요',dog:'전 견종 동반 가능',lat:33.4600,lng:126.3600},
-'카페모알보알':{cat:'오션뷰 카페',addr:'제주 제주시 구좌읍 구좌해안로 141',hours:'확인 필요',dog:'확인 필요',note:'보라카이 감성 (김녕)',lat:33.5570,lng:126.7550}
+'카페모알보알':{cat:'오션뷰 카페',addr:'제주 제주시 구좌읍 구좌해안로 141',hours:'확인 필요',dog:'확인 필요',note:'보라카이 감성 (김녕)',lat:33.5570,lng:126.7550},
+'렌트카':{cat:'렌트카 (예약 확정 · 캐스퍼)',addr:'제주카카렌트카 본사 — 제주 제주시 용문로 20',tel:'1566-0880',hours:'08:00 ~ 20:00 ✔ · 대여 10/7 08:00 → 반납 10/10 20:00',price:'₩193,384 결제완료 (완전자차 포함) + 반려동물 마리당 1만원 현장',dog:'7kg 미만 · 케이지 지참 필수 ✔',note:'셔틀: 공항 1층 5번 게이트 1구역 1번 · 30분 간격 · 7분 · 예약 GM2321964',nq:'제주카카렌트카',lat:33.5070,lng:126.5160}
 };
 function tmapUrl(k){var p=PLACE_DB[k];return 'tmap://route?goalname='+encodeURIComponent(k)+'&goalx='+p.lng+'&goaly='+p.lat}
 function naverUrl(k){return 'https://map.naver.com/p/search/'+encodeURIComponent((PLACE_DB[k].nq||('제주 '+k)))}
@@ -855,14 +865,20 @@ lsAdd(LS.expense,d);if(d.day!=='pre')renderExpenses(Number(d.day));renderSpend()
 
 /* ===== 사용경비 종합 탭 ===== */
 var SP_CAT_COLOR={'항공':'#3b82f6','숙박':'#ec4899','식비':'#fb923c','카페·간식':'#a78bfa','입장료':'#34d399','교통·주유':'#22d3ee','장보기':'#f59e0b','기타':'#94a3b8'};
-var SP_TOTAL_BUDGET=859800+150000+120000+150000+120000; /* 사전결제 확정 + DAY 예산 합 */
+var SP_TOTAL_BUDGET=833184+150000+120000+150000+120000; /* 사전결제 확정(항공+숙소+렌트카) + DAY 예산 합 */
 var spFilterDay='all',spFilterCat='all';
-function seedPrepaid(){if(localStorage.getItem(TRIP_CODE+'_seeded'))return;
+function seedPrepaid(){
+if(!localStorage.getItem(TRIP_CODE+'_seeded')){
 [{day:'pre',cat:'항공',title:'진에어 왕복 (LJ501/LJ510)',amt:'367800'},
  {day:'pre',cat:'숙박',title:'돌담채 2박 (10/7~9)',amt:'152000'},
  {day:'pre',cat:'숙박',title:'쉬엉갑서예 1박 (애견비 포함)',amt:'120000'},
- {day:'pre',cat:'교통·주유',title:'렌트카 4일 (예상가)',amt:'220000'}].forEach(function(d){lsAdd(LS.expense,d)});
-try{localStorage.setItem(TRIP_CODE+'_seeded','1')}catch(e){}}
+ {day:'pre',cat:'교통·주유',title:'카모아 캐스퍼 3일12h (완전자차·결제완료)',amt:'193384'}].forEach(function(d){lsAdd(LS.expense,d)});
+try{localStorage.setItem(TRIP_CODE+'_seeded','1');localStorage.setItem(TRIP_CODE+'_seedfix1','1')}catch(e){}}
+else if(!localStorage.getItem(TRIP_CODE+'_seedfix1')){ /* v1.2 마이그레이션: 렌트카 예상가 → 확정가 */
+var arr=lsLoad(LS.expense),chg=false;
+arr.forEach(function(e){if(e.day==='pre'&&e.title&&e.title.indexOf('렌트카 4일')>-1){e.title='카모아 캐스퍼 3일12h (완전자차·결제완료)';e.amt='193384';chg=true}});
+if(chg)lsSave(LS.expense,arr);
+try{localStorage.setItem(TRIP_CODE+'_seedfix1','1')}catch(e){}}}
 function spDayLabel(d){return d==='pre'?'💳 사전결제':'DAY '+d}
 function renderSpend(){var box=document.getElementById('panel-spend');if(!box)return;
 var all=lsLoad(LS.expense);
